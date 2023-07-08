@@ -72,7 +72,7 @@ Flow simulator code and inverse modelling framework are research code. The 1D fl
 
 2. S. Berg, E. Unsal, H. Dijk, Sensitivity and uncertainty analysis for parameterization of multi phase flow models, <A HREF="https://doi.org/10.1007/s11242-021-01576-4">Transport in Porous Media 140(1), 27-57, 2021.</a>
 
-3. S. Berg, H. Dijk, E. Unsal, R. Hofmann, B. Zhao, V. Ahuja, Simultaneous Determination of Relative Permeability and Capillary Pressure from an Unsteady-State Core Flooding Experiment?, Computers and GeoSciences <i>under review</i> <A HREF="https://www.authorea.com/users/554224/articles/653417-simultaneous-determination-of-relative-permeability-and-capillary-pressure-from-an-unsteady-state-core-flooding-experiment">preprint</a> <A HREF="https://doi.org/10.22541/essoar.168882039.92701369/v1">DOI:10.22541/essoar.168882039.92701369/v1</a>
+3. S. Berg, H. Dijk, E. Unsal, R. Hofmann, B. Zhao, V. Ahuja, Simultaneous Determination of Relative Permeability and Capillary Pressure from an Unsteady-State Core Flooding Experiment?, Computers and GeoSciences <i>to be submitted</i>
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -250,7 +250,7 @@ We would like to acknowledge
 <!-- How to Cite -->
 ## How to Cite
 
-1. S. Berg, H. Dijk, E. Unsal, R. Hofmann, B. Zhao, V. Ahuja, Simultaneous Determination of Relative Permeability and Capillary Pressure from an Unsteady-State Core Flooding Experiment?, Computers and GeoSciences <i>under review</i> <A HREF="https://www.authorea.com/users/554224/articles/653417-simultaneous-determination-of-relative-permeability-and-capillary-pressure-from-an-unsteady-state-core-flooding-experiment">preprint</a> <A HREF="https://doi.org/10.22541/essoar.168882039.92701369/v1">DOI:10.22541/essoar.168882039.92701369/v1</a>
+1. S. Berg, H. Dijk, E. Unsal, R. Hofmann, B. Zhao, V. Ahuja, Simultaneous Determination of Relative Permeability and Capillary Pressure from an Unsteady-State Core Flooding Experiment?, Computers and GeoSciences <i>to be submitted</i>
 
 2. S. Berg, E. Unsal, H. Dijk, Non-Uniqueness and Uncertainty Quantification of Relative Permeability Measurements by Inverse Modelling, <A HREF="https://www.sciencedirect.com/science/article/pii/S0266352X20305279?dgcid=author">Computers and Geotechnics 132, 103964, 2021.</a>
 
