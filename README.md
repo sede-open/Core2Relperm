@@ -37,14 +37,14 @@
   <p align="center">
     A Python library for interpreting core flooding experiments
     <br />
-    <a href="https://github.com/sede-open/Core2Relperm-testing"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/sede-open/Core2Relperm"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/sede-open/Core2Relperm-testing">View Demo</a>
+    <a href="https://github.com/sede-open/Core2Relperm">View Demo</a>
     ·
-    <a href="https://github.com/sede-open/Core2Relperm-testing/issues">Report Bug</a>
+    <a href="https://github.com/sede-open/Core2Relperm/issues">Report Bug</a>
     ·
-    <a href="https://github.com/sede-open/Core2Relperm-testing/issues">Request Feature</a>
+    <a href="https://github.com/sede-open/Core2Relperm/issues">Request Feature</a>
   </p>
 </div>
 
@@ -52,7 +52,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://github.com/sede-open/Core2Relperm-testing)
+[![Product Name Screen Shot][product-screenshot]](https://github.com/sede-open/Core2Relperm)
 
 For modelling studies of underground storage of carbon dioxide and hydrogen, transport in the <A HREF="https://en.wikipedia.org/wiki/Vadose_zone">vadoze zone</a>, contaminant hydrology as well as hydrocarbon recovery, it is important to have a consistent set of relative permeability and capillary pressure-saturation functions as inputs for numerical reservoir models in order to assess risks and uncertainties and provide forward-models for different scenarios.
 Such relative permeability and capillary-pressure saturations functions are typically obtained in <A HREF="https://en.wikipedia.org/wiki/Special_core_analysis">Special Core Analysis (SCAL)</a> where core flooding experiments are a central element (see also <A HREF="https://www.scaweb.org/">The Society of Core Analysts</a>). Interpreation of such core flooding experiments by analytical approximations has several disadvantages and instead, interpretation by inverse modelling is the preferred approach.
@@ -227,7 +227,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 Steffen Berg - <A HREF="https://www.linkedin.com/in/steffen-berg-5409a672">LinkedIn</a> - steffen.berg@shell.com
 
-Project Link: [https://github.com/sede-open/Core2Relperm-testing](https://github.com/sede-open/Core2Relperm-testing)
+Project Link: [https://github.com/sede-open/Core2Relperm](https://github.com/sede-open/Core2Relperm)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -266,11 +266,11 @@ We would like to acknowledge
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [product-screenshot]: images/Core2Relperm-logo.png
-[license-url]: https://github.com/sede-open/Core2Relperm-testing/blob/main/license.txt
+[license-url]: https://github.com/sede-open/Core2Relperm/blob/main/license.txt
 [linkedin-url]: www.linkedin.com/in/steffen-berg-5409a672
-[contributors-url]: https://github.com/sede-open/Core2Relperm-testing/graphs/contributors
-[forks-url]: https://github.com/sede-open/Core2Relperm-testing/network/members
-[issues-url]: https://github.com/sede-open/Core2Relperm-testing/issues
-[stars-url]: https://github.com/sede-open/Core2Relperm-testing/stargazers
+[contributors-url]: https://github.com/sede-open/Core2Relperm/graphs/contributors
+[forks-url]: https://github.com/sede-open/Core2Relperm/network/members
+[issues-url]: https://github.com/sede-open/Core2Relperm/issues
+[stars-url]: https://github.com/sede-open/Core2Relperm/stargazers
 [BestReadme-url]: https://github.com/othneildrew/Best-README-Template
 
