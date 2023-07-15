@@ -264,7 +264,7 @@ CubicInterpolator = PchipInterpolator
 #    Corey and LET functions
 #-------------------------------------------------------------------------------------
 
-@numba.jit
+@numba.jit(nopython=True)
 def rlp_2p_linear(sat1v,sat1_data,kr1_data,kr2_data,lex=0,rex=0):
 
     i = np.digitize( sat1v, sat1_data )-1

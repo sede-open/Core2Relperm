@@ -137,8 +137,9 @@ def solve_1D2P_version1(
         xD[i] = xD[i-1] + 0.5*(delxi[i-1]+delxi[i])
     
     # Set initial water saturation distribution
-    sw = np.ones(N1,dtype=np.float64) * sw_initial
-     
+    #sw = np.ones(N1,dtype=np.float64)  * sw_initial   trying to fix error in Python 3.11 but that is probalby not the cause
+    sw = np.ones(N1).astype(np.float64)  * sw_initial
+    
     # Make snapshots at each timestep
     movie_tD     = []
     movie_sw     = []
@@ -533,7 +534,8 @@ class DisplacementModel1D2P(object):
             df['FracFlow'] = 1.0
 
         dtD = df.dTIME.values * df.Rate.values * tD_conv
-        tD  = np.hstack( [[0],dtD[:-1].cumsum()] )  # FIXED BUG
+ #       tD  = np.hstack( [[0],dtD[:-1].cumsum()] )  # FIXED BUG  # this line is creating an error in Python 3.11
+        tD  = np.hstack( [[0],dtD[:-1].cumsum().value] )
 
         df['tD' ] = tD
         df['dtD'] = dtD

@@ -1480,7 +1480,7 @@ corr = pd.DataFrame(data=correlation, index=LETSKnames, columns=LETSKnames)
 
 
 # Generate a mask for the upper triangle; True = do NOT show
-mask = np.zeros_like(corr, dtype=np.bool)
+mask = np.zeros_like(corr, dtype=bool)
 mask[np.triu_indices_from(mask)] = True
 
 # Set up the matplotlib figure
