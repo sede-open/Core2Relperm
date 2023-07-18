@@ -498,7 +498,8 @@ class DisplacementModel1D2P(object):
 
         vscref = 1.0 * u.cP
 
-        tD_conv = (u.hour * u.cm**3/u.minute / (L*A*por)).to(u.minute/u.minute)
+        #tD_conv = (u.hour * u.cm**3/u.minute / (L*A*por)).to(u.minute/u.minute)
+        tD_conv = (u.hour * u.cm**3/u.minute / (L*A*por)).to(u.minute/u.minute).value
 
         pres_conv = (u.cm**3/u.minute/A * vscref * L / K).to(u.bar).value
 
@@ -534,8 +535,8 @@ class DisplacementModel1D2P(object):
             df['FracFlow'] = 1.0
 
         dtD = df.dTIME.values * df.Rate.values * tD_conv
- #       tD  = np.hstack( [[0],dtD[:-1].cumsum()] )  # FIXED BUG  # this line is creating an error in Python 3.11
-        tD  = np.hstack( [[0],dtD[:-1].cumsum().value] )
+        tD  = np.hstack( [[0],dtD[:-1].cumsum()] )  # FIXED BUG  
+ #       tD  = np.hstack( [[0],dtD[:-1].cumsum().value] )  # fix for an error in Python 3.11, but instead fix tD_conv in line 502
 
         df['tD' ] = tD
         df['dtD'] = dtD
