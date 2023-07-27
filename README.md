@@ -101,7 +101,6 @@ The code and examples can be run from most modern Python distributions such as A
 * pandas (using internally pandas data frames, but also to import/expert data)
 * lmfit (the engine for the least squares fits)
 * emcee (Markov chain Monte Carlo sampler, optional)
-* astropy (using internally for unit conversion)
 * numba (Just In Time compiler)
 * seaborn (for statistical data visualization)
 
@@ -152,10 +151,6 @@ Alternatively, if you face issues with above mentioned quick installtion, you ca
    emcee 
    ```sh
    conda install -c conda-forge emcee
-   ```
-   astropy 
-   ```sh
-   conda install astropy
    ```
    seaborn 
    ```sh

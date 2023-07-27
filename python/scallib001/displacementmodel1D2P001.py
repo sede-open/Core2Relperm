@@ -16,7 +16,7 @@
 #   * density kg/m3
 #   * viscosity cP
 #   * permeability in mDarcy
-#   * length, area in cm
+#   * length in cm, area in cm2
 #   * time in hour
 #
 # 03.04.2020 HD
@@ -29,18 +29,20 @@
 #--------------------------------------------------------------------------
 
 
-# Conversion constants
+# Constants of Nature:
+gravity_constant = 9.8066  # m/s**2
 
-from astropy import units as u
+# Conversion constants to convert to SI units in calculations:
 
-u.Darcy = 1e-12*u.m**2
-
-gravity_constant = 9.8066 * u.m/u.second**2
-
-_GVH_CONV_BAR_ = (gravity_constant * 1 * u.kg/u.m**3 * 1 * u.cm).to(u.bar).value
-_TD_CONV_      = (u.hour * u.cm**3/u.minute / (u.cm*u.cm**2)).to(u.minute/u.minute)
-_PRESS_CONV_BAR_ = (u.cm**3/u.minute/u.cm**2 * u.cP * u.cm / u.Darcy).to(u.bar).value
-
+METER = 1.0 # m
+CENTIMETER = 0.01 # m
+CENTIPOISE = 0.001 # Pa.s
+MINUTE = 60.0 # s
+HOUR = 3600.0 # s
+KILOGRAM = 1.0 # kg
+BAR = 1e5 # Pa
+DARCY = 0.9869233e-12 # m2
+MILLIDARCY = DARCY/1000
 
 import numpy as np
 import pandas as pd
@@ -487,21 +489,14 @@ class DisplacementModel1D2P(object):
 
         assert np.all( self.rate_schedule.InjRate.values>0 ), 'Injection rate must be non-zero'
         
-        from astropy import units as u
-
-        u.Darcy = 1e-12*u.m**2
-
-        K   = self.permeability * u.Darcy / 1000
-        L   = self.core_length * u.cm
-        A   = self.core_area * u.cm**2
+        K   = self.permeability * MILLIDARCY
+        L   = self.core_length * CENTIMETER
+        A   = self.core_area * CENTIMETER**2
         por = self.porosity
 
-        vscref = 1.0 * u.cP
+        tD_conv = HOUR * CENTIMETER**3/MINUTE/ (L*A*por)
 
-        #tD_conv = (u.hour * u.cm**3/u.minute / (L*A*por)).to(u.minute/u.minute)
-        tD_conv = (u.hour * u.cm**3/u.minute / (L*A*por)).to(u.minute/u.minute).value
-
-        pres_conv = (u.cm**3/u.minute/A * vscref * L / K).to(u.bar).value
+        pres_conv = CENTIMETER**3/MINUTE / A * CENTIPOISE * L / K / BAR
 
         period_time = self.rate_schedule.StartTime.values
         period_rate = self.rate_schedule.InjRate.values
@@ -535,8 +530,7 @@ class DisplacementModel1D2P(object):
             df['FracFlow'] = 1.0
 
         dtD = df.dTIME.values * df.Rate.values * tD_conv
-        tD  = np.hstack( [[0],dtD[:-1].cumsum()] )  # FIXED BUG  
- #       tD  = np.hstack( [[0],dtD[:-1].cumsum().value] )  # fix for an error in Python 3.11, but instead fix tD_conv in line 502
+        tD  = np.hstack( [[0],dtD[:-1].cumsum()] )
 
         df['tD' ] = tD
         df['dtD'] = dtD
@@ -549,8 +543,10 @@ class DisplacementModel1D2P(object):
         
         sim_schedule = self.sim_schedule
        
-        gvhw_bar = self.density_w * self.core_length * _GVH_CONV_BAR_ 
-        gvhn_bar = self.density_n * self.core_length * _GVH_CONV_BAR_ 
+        gvh_conv = (gravity_constant * KILOGRAM/METER**3 * CENTIMETER) / BAR
+
+        gvhw_bar = self.density_w * self.core_length * gvh_conv
+        gvhn_bar = self.density_n * self.core_length * gvh_conv
         
         solver_result = solve_1D2P_version1( 
             
