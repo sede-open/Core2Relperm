@@ -21,7 +21,7 @@
 #
 # 03.04.2020 HD
 # - completed set of columns in tss_table
-# - included calculation of total pressure drop, as per MoReS model
+# - included calculation of total pressure drop
 #   i.e., assume linear relperms in block before inlet
 # - include PVinj as column in tss_table
 # - information about columns in tss_table
@@ -246,9 +246,6 @@ def solve_1D2P_version1(
                 flxwdu [-1] = 0
                 flxwdd [-1] = 0
                 
-            #TODO if np.any( flxw[:-1]<0 ):
-            #TODO    raise ValueError('Counter current flow occurred - solver not appropriate STOP')
-
             rhs = (sw_new - sw_prv)*delxi[1:]/dtD + flxw[1:] - flxw[:-1]
 
             nr_residual = np.linalg.norm(rhs*dtD/delxi[1:])
@@ -293,13 +290,10 @@ def solve_1D2P_version1(
                 
                 delp = -(1 + dpcwdx * mobn + gvhnD * mobn + gvhwD * mobw) / dtr / mobt / pres_conv
 
-                ##delp[0] = -Fw/mobw[1] / dtr[0] / pres_conv
-                
                 pcw /= pres_conv
                 
-                # do not use pressure drop over begin/end faces in order to compare to PressureData_SIM  WRONG
                 pw = np.zeros( sw.size )
-                pw[2:] = np.cumsum( delp[1:-1] )   #TODO
+                pw[2:] = np.cumsum( delp[1:-1] )
                 pw -= pw[-1] - 1.0 + delp[-1] # outer edge at 1 bar
                 
                 pn = pw + pcw
@@ -386,7 +380,7 @@ def update_step( t, delt, t_end, i_t_stops, t_stops, s_stops, f_stops, follow_st
 
 @numba.njit
 def calc_inlet_Sw( FW, dPcdxD, vscw, vscn, gvhwD, gvhnD ):
-    '''Calculate Sw at inlet set assuming linear relperms at inlet (MoReS procedure)'''
+    '''Calculate Sw at inlet set assuming linear relperms at inlet'''
     qw = vscw * FW
     qn = vscn * (1-FW)
     g  = dPcdxD + gvhnD -gvhwD

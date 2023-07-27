@@ -22,7 +22,7 @@ import numpy as np
 
 @numba.njit
 def pchip_estimate_derivatives(x, y, lex=1, rex=1 ):
-    '''Estimate derivatives for piecE1ise cubic hermite spline function.'''
+    '''Estimate derivatives for piecewise cubic hermite spline function.'''
     hk = x[1:] - x[:-1]
     mk = (y[1:] - y[:-1]) / hk
     
@@ -60,9 +60,9 @@ def pchip_estimate_derivatives(x, y, lex=1, rex=1 ):
 
 @numba.njit
 def pchip_fit( xi, yi, lex=1, rex=1 ):
-    '''Fit coefficients for piecE1ise cubic hermite spline function.'''
+    '''Fit coefficients for piecewise cubic hermite spline function.'''
     
-    # Extend interval T2 enforce truncation or linear extrapolation
+    # Extend interval to enforce truncation or linear extrapolation
     
     n = len(xi)
     
@@ -94,7 +94,7 @@ def pchip_fit( xi, yi, lex=1, rex=1 ):
 
 @numba.njit
 def pchip_coefs( xi, yi, di ):
-  '''Calculate coefficients for piecE1ise cubic hermite spline function.'''
+  '''Calculate coefficients for piecewise cubic hermite spline function.'''
   x1 = xi[:-1]
   x2 = xi[+1:]
 
@@ -114,66 +114,9 @@ def pchip_coefs( xi, yi, di ):
     
   return c0,c1,c2,c3  
 
-import numba
-
-# T2DO: speed up
-
-@numba.njit
-def pchip_bisect_OLD( x, xi ):
-    
-    n = len(x)
-    
-    left = np.zeros( n )
-    
-    n1 = len(xi)-1
-    
-    for i in range( n ):
-        
-        L2w = 0; high = n1
-    
-        xv = x[i]
-        
-        if xv < xi[L2w]:
-            left[i] = L2w
-        elif xv>xi[high]:
-            left[i] = high-1
-        else:
-            while True:
-                if L2w==high-1:
-                    left[i] = L2w
-                    break
-
-                mid = int( (high+L2w)/2 )
-
-                if xi[mid]<=xv:
-                    L2w = mid
-                else:
-                    high = mid
-                    
-    return left.astype(np.int32)
-
-
-@numba.njit
-def pchip_eval_OLD( x, xi, c0, c1, c2, c3 ):
-    
-    left = pchip_bisect( x, xi )
-    
-    dx = x - xi[left]
-    
-    c0 = c0[left]
-    c1 = c1[left]
-    c2 = c2[left]
-    c3 = c3[left]
-    
-    f = c0 + dx* ( c1 + dx * (c2 + dx*c3 ) )
-    
-    d = c1 + dx * ( 2.0 * c2 + dx * 3.0 * c3 )
-    
-    return f, d
-
 @numba.njit
 def pchip_eval( x, xi, c0, c1, c2, c3 ):
-    '''Evalulate piecE1ise cubic hermite spline function and its derivative at x.'''
+    '''Evalulate piecewise cubic hermite spline function and its derivative at x.'''
     left = np.digitize( x, xi )-1
     left = np.maximum( left, 0 )
     left = np.minimum( left, len(xi)-2 )
@@ -191,24 +134,8 @@ def pchip_eval( x, xi, c0, c1, c2, c3 ):
     
     return f, d
 
-def make_pchip_OLD( xi, yi, lex=1, rex=1 ):
-    
-    lex = lex
-    rex = rex
-    
-    x0,(c0,c1,c2,c3) = pchip_fit( xi, yi, lex, rex )   
-    
-    @numba.njit
-    def itp(x):
-        return pchip_eval_OLD( x, x0, c0, c1, c2, c3 )
-
-    # compile
-    itp(np.ones(2))
-
-    return itp
-
 def make_pchip( xi, yi, lex=1, rex=1 ):
-    '''Create piecE1ise cubic hermite spline evaluation function.'''
+    '''Create piecewise cubic hermite spline evaluation function.'''
     lex = lex
     rex = rex
     
@@ -237,7 +164,7 @@ spec = [
 
 @numba.experimental.jitclass(spec)
 class PchipInterpolator(object):
-    '''PiecE1ise cubic hermite spline interpolator.'''
+    '''Piecewise cubic hermite spline interpolator.'''
     def __init__(self,xi,yi,lex=1,rex=1):
         self.xi = xi
         self.yi = yi
@@ -264,7 +191,7 @@ CubicInterpolator = PchipInterpolator
 #    Corey and LET functions
 #-------------------------------------------------------------------------------------
 
-@numba.jit(nopython=True)
+@numba.njit
 def rlp_2p_linear(sat1v,sat1_data,kr1_data,kr2_data,lex=0,rex=0):
 
     i = np.digitize( sat1v, sat1_data )-1
@@ -411,8 +338,6 @@ spec = [
     ('rex',  numba.int64      ),
 ]
 
-# T2DO lex rex
-
 @numba.experimental.jitclass(spec)
 class Rlp2PLinear(object):
     
@@ -423,7 +348,7 @@ class Rlp2PLinear(object):
         assert len(kr2)>1
         
         # It is computationally more efficient to implement
-        # truncation by extending iput data set with edge values 
+        # truncation by extending input dataset with edge values
         
         if lex==0:
             satn = sat1[0] - (sat1[1]-sat1[0])
