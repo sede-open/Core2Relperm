@@ -9,7 +9,6 @@ dependencies:
   - argon2-cffi=21.3.0=pyhd3eb1b0_0
   - argon2-cffi-bindings=21.2.0=py310h2bbff1b_0
   - asteval=0.9.27=pyhd8ed1ab_0
-  - astropy=5.1=py310h9128911_0
   - asttokens=2.0.5=pyhd3eb1b0_0
   - attrs=22.1.0=py310haa95532_0
   - backcall=0.2.0=pyhd3eb1b0_0

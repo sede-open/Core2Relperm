@@ -1293,7 +1293,7 @@ plt.show()
 # %%
 
 plt.figure(figsize=(15,4))
-plt.plot( result_exp.xD, Swproferr, 'k', color='gray',label='experimental data');
+plt.plot( result_exp.xD, Swproferr, color='gray',label='experimental data');
 plt.plot( result1.xD, result1.movie_sw.T, 'k',label='match');
 for i in range(0,len(sattimelistn)):
     plt.plot( result1.xD, result1.movie_sw.T[:,sattimelistn[i]], 'r-',label='match');
@@ -1513,5 +1513,5 @@ sns.heatmap(
     cbar_kws={"shrink": .5}  # Extra kwargs for the legend; in this case, shrink by 50%
 )
 
-fig.show()
+plt.show()
 # %%
