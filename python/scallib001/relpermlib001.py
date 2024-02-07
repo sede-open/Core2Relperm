@@ -237,7 +237,76 @@ def rlp_2p_linear(sat1v,sat1_data,kr1_data,kr2_data,lex=0,rex=0):
     return k1, k2, k1d, k2d
 
 @numba.njit
-def rlp_2p_corey(sat1v,Sr1,Sr2,N1,N2,Ke1,Ke2):
+def power_eps(s, N, eps):
+    """Power function and its derivative; when N<1 a regularized version is used
+       to prevent infinite derivative values at endpoints.
+
+       When N >= 1:
+            returns s**N and N s**(N-1)
+
+       When N < 1:
+            returns ((s + eps)**N - eps**N)/((1 + eps)**N - eps**N) and
+                    N (s + eps)**(N-1)/((1 + eps)**N - eps**N)
+
+       When N < 1e-4 the limiting value valid for N=0 is returned
+            returns log(1 + s/eps)/log(1 + 1/eps) and
+                    1/(1+s/eps) / eps / log(1 + 1/eps)
+
+       Note: 
+           the power function is valid only for s >= 0 and N >= 0
+           both s and N are clipped to 0 when values are negative.
+    """ 
+
+    # Make sure s is non-negative
+    s = np.maximum(s, 0.0)
+    
+    if N < 1.0 and eps > 0.0:
+        
+        # Regularized power function
+
+        # Write code such that minimum number of power function calls is used (2) 
+
+        epss = 1.0 + s/eps
+        eps1 = 1.0 + 1.0/eps
+        
+        if N > 1e-4:
+
+            epssN = np.power(epss, N)
+            eps1N = np.power(eps1, N)
+        
+            epssNmin1 = epssN / epss
+        
+            dinv = 1.0/(eps1N - 1.0)
+        
+            f = (epssN - 1.0) * dinv
+            fd = N * epssNmin1 / eps * dinv
+
+        else:
+            
+            # Limiting values when N = 0
+            
+            logepss = np.log(epss)
+            logeps1 = np.log(eps1)
+            
+            dinv = 1.0/logeps1
+            
+            f = logepss * dinv
+            fd = 1.0/epss / eps * dinv
+    
+    else:
+        
+        # Standard power function
+
+        sN = np.power(s, N)
+        
+        f = np.power(s, N)
+        fd = N * np.power(s, N-1.0)
+
+    return f, fd
+
+
+@numba.njit
+def rlp_2p_corey(sat1v,Sr1,Sr2,N1,N2,Ke1,Ke2,eps=1e-4):
 
     n = len(sat1v)
 
@@ -258,17 +327,19 @@ def rlp_2p_corey(sat1v,Sr1,Sr2,N1,N2,Ke1,Ke2):
         else:
             ss = (s1-Sr1)/(1-Sr2-Sr1)
 
-            kr1[i] = np.power(   ss, N1 ) * Ke1
-            kr2[i] = np.power( 1-ss, N2 ) * Ke2
+            f1, f1d = power_eps(ss, N1, eps)
+            f2, f2d = power_eps(1.0-ss, N2, eps)
+            
+            kr1[i] = f1 * Ke1
+            kr2[i] = f2 * Ke2
 
-            kr1d[i] = +np.power(   ss, N1-1 ) * Ke1 * N1 / (1-Sr1-Sr2)
-            kr2d[i] = -np.power( 1-ss, N2-1 ) * Ke2 * N2 / (1-Sr1-Sr2)
+            kr1d[i] = +f1d * Ke1 / (1-Sr1-Sr2)
+            kr2d[i] = -f2d * Ke2 / (1-Sr1-Sr2)
 
     return kr1, kr2, kr1d, kr2d
 
-
 @numba.njit
-def rlp_2p_let(sat1v,Sr1,Sr2,L1,E1,T1,L2,E2,T2,Ke1,Ke2):
+def rlp_2p_let(sat1v,Sr1,Sr2,L1,E1,T1,L2,E2,T2,Ke1,Ke2,eps=1e-4):
 
     n = len(sat1v)
 
@@ -277,7 +348,7 @@ def rlp_2p_let(sat1v,Sr1,Sr2,L1,E1,T1,L2,E2,T2,Ke1,Ke2):
 
     kr1d = np.zeros( n )
     kr2d = np.zeros( n )
-
+    
     Ke1s = Ke1 / (1-Sr1-Sr2)
     Ke2s = Ke2 / (1-Sr1-Sr2)
     
@@ -292,41 +363,36 @@ def rlp_2p_let(sat1v,Sr1,Sr2,L1,E1,T1,L2,E2,T2,Ke1,Ke2):
         else:
             ss = (s1-Sr1)/(1-Sr2-Sr1)
 
-            pw0f =  np.power(   ss, L1 )
-            po0f =  np.power( 1-ss, L2 )
- 
-            pw0d = +np.power(   ss, L1-1 ) * L1
-            po0d = -np.power( 1-ss, L2-1 ) * L2
-
+            pw0f, pw0d = power_eps(ss, L1, eps)
+            po0f, po0d = power_eps(1-ss, L2, eps)
+            
             if E1>0:
-                
-                pw1f =  np.power( 1-ss, T1   )
-                pw1d = -np.power( 1-ss, T1-1 ) * T1
+
+                pw1f, pw1d = power_eps(1-ss, T1, eps)
                
                 dw = (pw0f+E1*pw1f)
                 
-                kr1 [i] = Ke1  * pw0f/dw 
-                kr1d[i] = Ke1s * (pw0d*pw1f - pw0f*pw1d) / (dw*dw) * E1
+                kr1 [i] = Ke1 * pw0f/dw 
+                kr1d[i] = Ke1s * (pw0d*pw1f + pw0f*pw1d) / (dw*dw) * E1
                 
             else:
                 
-                kr1 [i] = Ke1  * pw0f
+                kr1 [i] = Ke1 * pw0f
                 kr1d[i] = Ke1s * pw0d
                 
             if E2>0:
                 
-                po1f =  np.power(   ss, T2   )
-                po1d = +np.power(   ss, T2-1 ) * T2
-               
+                po1f, po1d = power_eps(ss, T2, eps)
+
                 do = (po0f+E2*po1f)
                 
-                kr2 [i] = Ke2  * po0f/do 
-                kr2d[i] = Ke2s * (po0d*po1f - po0f*po1d) / (do*do) * E2
+                kr2 [i] = Ke2 * po0f/do 
+                kr2d[i] = -Ke2s * (po0d*po1f + po0f*po1d) / (do*do) * E2
                 
             else:
                 
-                kr2 [i] = Ke2  * po0f
-                kr2d[i] = Ke2s * po0d
+                kr2 [i] = Ke2 * po0f
+                kr2d[i] = -Ke2s * po0d
  
     return kr1, kr2, kr1d, kr2d
 
@@ -458,12 +524,51 @@ spec = [
     ('T2',  numba.float64 ),
     ('Ke1', numba.float64 ),
     ('Ke2', numba.float64 ),
+    ('eps', numba.float64 ),
 ]
 
 @numba.experimental.jitclass(spec)
 class Rlp2PLET(object):
     
-    def __init__(self,Sr1,Sr2,L1,E1,T1,L2,E2,T2,Ke1,Ke2):
+    def __init__(self,Sr1,Sr2,L1,E1,T1,L2,E2,T2,Ke1,Ke2,eps=1e-4):
+
+        if Sr1 < 0.0:
+           raise ValueError("Sr1 is negative, choose 0<=Sr1<1")
+        if Sr2 < 0.0:
+           raise ValueError("Sr2 is negative, choose 0<=Sr2<1")
+        if Sr1 >= 1.0:
+           raise ValueError("Sr1 > 1, choose 0<=Sr1<1")
+        if Sr2 >= 1.0:
+           raise ValueError("Sr2 > 1, choose 0<=Sr2<1")
+        if 1-Sr1-Sr2 < 1e-6:
+           raise ValueError("1-Sr1-Sr2 is not positive, adjust Sr1 and/or Sr2")
+        if L1 <= 0.0:
+           raise ValueError("L1 is non-positive, choose L1 > 0")
+        if L2 <= 0.0:
+           raise ValueError("L2 is non-positive, choose L2 > 0")
+        if E1 < 0.0:
+           raise ValueError("E1 is negative, choose E1 >= 0")
+        if E2 < 0.0:
+           raise ValueError("E2 is negative, choose E2 >= 0")
+        if E1>0.0 and T1 <= 0.0:
+           raise ValueError("T1 is non-positive, choose T1 > 0")
+        if E2>0.0 and T2 <= 0.0:
+           raise ValueError("T2 is non-positive, choose T2 > 0")
+        if Ke1 <= 0.0:
+           raise ValueError("Ke1 is non-positive, choose Ke1 > 0")
+        if Ke2 <= 0.0:
+           raise ValueError("Ke2 is non-positive, choose Ke2 > 0")
+        if eps < 0.0:
+           raise ValueError("eps is negative, choose eps >= 0")
+        if L1 < 1.0 and eps == 0:
+           raise ValueError("eps must be > 0 when L1 < 1, otherwise infinite derivative at endpoint")
+        if L2 < 1.0 and eps == 0:
+           raise ValueError("eps must be > 0 when L2 < 1, otherwise infinite derivative at endpoint")
+        if E1>0.0 and T1 < 1.0 and eps == 0:
+           raise ValueError("eps must be > 0 when T1 < 1, otherwise infinite derivative at endpoint")
+        if E2>0.0 and T2 < 1.0 and eps == 0:
+           raise ValueError("eps must be > 0 when T2 < 1, otherwise infinite derivative at endpoint")
+
         self.Sr1  = Sr1
         self.Sr2 = Sr2
         self.L1   = L1
@@ -474,12 +579,13 @@ class Rlp2PLET(object):
         self.T2   = T2
         self.Ke1 = Ke1
         self.Ke2 = Ke2
+        self.eps = eps
         
     def calc(self,sat1v):        
         return rlp_2p_let(sat1v,self.Sr1,self.Sr2,
                           self.L1,self.E1,self.T1,
                           self.L2, self.E2,self.T2,
-                          self.Ke1,self.Ke2)
+                          self.Ke1,self.Ke2, self.eps)
 
     def calc_kr1(self,sat1v):
         return self.calc(sat1v)[0]
@@ -500,22 +606,51 @@ spec = [
     ('N2',  numba.float64 ),
     ('Ke1', numba.float64 ),
     ('Ke2', numba.float64 ),
+    ('eps', numba.float64 ),
 ]
 
 @numba.experimental.jitclass(spec)
 class Rlp2PCorey(object):
     
-    def __init__(self,Sr1,Sr2,N1,N2,Ke1,Ke2):
+    def __init__(self,Sr1,Sr2,N1,N2,Ke1,Ke2,eps=1e-4):
+
+        if Sr1 < 0.0:
+           raise ValueError("Sr1 is negative, choose 0<=Sr1<1")
+        if Sr2 < 0.0:
+           raise ValueError("Sr2 is negative, choose 0<=Sr2<1")
+        if Sr1 >= 1.0:
+           raise ValueError("Sr1 > 1, choose 0<=Sr1<1")
+        if Sr2 >= 1.0:
+           raise ValueError("Sr2 > 1, choose 0<=Sr2<1")
+        if 1-Sr1-Sr2 < 1e-6:
+           raise ValueError("1-Sr1-Sr2 is negative, adjust Sr1 and/or Sr2")
+        if N1 <= 0.0:
+           raise ValueError("N1 is non-positive, choose N1 > 0")
+        if N2 <= 0.0:
+           raise ValueError("N2 is non-positive, choose N2 > 0")
+        if Ke1 <= 0.0:
+           raise ValueError("Ke1 is non-positive, choose Ke1 > 0")
+        if Ke2 <= 0.0:
+           raise ValueError("Ke2 is non-positive, choose Ke2 > 0")
+        if eps < 0.0:
+           raise ValueError("eps is negative, choose eps >= 0")
+        if N1 < 1.0 and eps == 0:
+           raise ValueError("eps must be > 0 when N1 < 1, otherwise infinite derivative at endpoint")
+        if N2 < 1.0 and eps == 0:
+           raise ValueError("eps must be > 0 when N2 < 1, otherwise infinite derivative at endpoint")
+
         self.Sr1 = Sr1
         self.Sr2 = Sr2
         self.N1  = N1
         self.N2  = N2
         self.Ke1 = Ke1
         self.Ke2 = Ke2
+        self.eps = eps
         
     def calc(self,sat1v):        
         return rlp_2p_corey(sat1v,self.Sr1,self.Sr2,
-                            self.N1,self.N2,self.Ke1,self.Ke2)
+                            self.N1,self.N2,self.Ke1,self.Ke2, 
+                            self.eps)
     
     def calc_kr1(self,sat1v):
         return self.calc(sat1v)[0]
