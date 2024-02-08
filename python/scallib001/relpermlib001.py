@@ -297,8 +297,6 @@ def power_eps(s, N, eps):
         
         # Standard power function
 
-        sN = np.power(s, N)
-        
         f = np.power(s, N)
         fd = N * np.power(s, N-1.0)
 
