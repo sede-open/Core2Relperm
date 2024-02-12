@@ -20,7 +20,7 @@
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#acknowledgments">Acknowledgments</a></li>
-    <li><a href="#howto-cite">Howto Cite</a></li>
+    <li><a href="#how-to-cite">How to Cite</a></li>
   </ol>
 </details>
 
@@ -161,7 +161,30 @@ Alternatively, if you face issues with above mentioned quick installtion, you ca
    conda install -c numba numba
    ```
 
-### Running Examples
+
+
+<!-- USAGE  -->
+## Usage
+
+### Solver Benchmarks
+
+We included 4 SCAL benchmarks from <A HREF="https://www.jgmaas.com">https://www.jgmaas.com</A> 
+
+```
+  benchmark_scores_Case1.ipynb
+  benchmark_scores_Case2.ipynb
+  benchmark_scores_Case3.ipynb
+  benchmark_scores_Case4.ipynb
+```
+
+
+that are benchmarking the 2-phase 1D flow solver defined in 
+R. Lenormand, K. Lorentzen, J. G. Maas and D. Ruth, COMPARISON OF FOUR NUMERICAL SIMULATORS FOR SCAL EXPERIMENTS, <A HREF="https://www.jgmaas.com/SCA/2016/SCA2016-006.pdf">SCA2016-006</a>
+
+
+
+
+### Running Inverse Modelling Examples
 
 We include 2 examples from the paper <b>Berg et al. Simultaneous Determination of Relative Permeability and Capillary Pressure ...</b>
 
@@ -242,7 +265,7 @@ We would like to acknowledge
 
 
 
-<!-- How to Cite -->
+<!-- How-to-Cite -->
 ## How to Cite
 
 1. S. Berg, H. Dijk, E. Unsal, R. Hofmann, B. Zhao, V. Ahuja, Simultaneous Determination of Relative Permeability and Capillary Pressure from an Unsteady-State Core Flooding Experiment <A HREF="https://doi.org/10.1016/j.compgeo.2024.106091">Computers and GeoSciences 168, 106091, 2024.</a> 
@@ -250,6 +273,10 @@ We would like to acknowledge
 2. S. Berg, E. Unsal, H. Dijk, Non-Uniqueness and Uncertainty Quantification of Relative Permeability Measurements by Inverse Modelling, <A HREF="https://www.sciencedirect.com/science/article/pii/S0266352X20305279?dgcid=author">Computers and Geotechnics 132, 103964, 2021.</a>
 
 3. S. Berg, E. Unsal, H. Dijk, Sensitivity and uncertainty analysis for parameterization of multi phase flow models, <A HREF="https://doi.org/10.1007/s11242-021-01576-4">Transport in Porous Media 140(1), 27-57, 2021.</a>
+
+4. R. Lenormand, K. Lorentzen, J. G. Maas and D. Ruth
+COMPARISON OF FOUR NUMERICAL SIMULATORS FOR SCAL EXPERIMENTS 
+<A HREF="https://www.jgmaas.com/SCA/2016/SCA2016-006.pdf">SCA2016-006</a>
 
 
 
