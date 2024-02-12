@@ -186,7 +186,7 @@ R. Lenormand, K. Lorentzen, J. G. Maas and D. Ruth, COMPARISON OF FOUR NUMERICAL
 
 ### Running Inverse Modelling Examples
 
-We include 2 examples from the paper <b>Berg et al. Simultaneous Determination of Relative Permeability and Capillary Pressure ...</b>
+We include 2 examples from the paper <b>S. Berg, E. Unsal, H. Dijk, Sensitivity and uncertainty analysis for parameterization of multi phase flow models, <A HREF="https://doi.org/10.1007/s11242-021-01576-4">Transport in Porous Media 140(1), 27-57, 2021.</a></b>
 
 * Fig. 09
   ```sh
