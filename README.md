@@ -126,41 +126,17 @@ Quick installation by replicating the environment in Anaconda:
    conda activate relperm
    ```
 
-Alternatively, if you face issues with above mentioned quick installtion, you can install the packages manually as shown below:
+Alternatively, if you face issues with above mentioned quick installtion, you can create the environment and install the Python packages manually as shown below:
 
-1. Clone the repo
+1. Create new environment and install required Python libraries
    ```sh
-   git clone https://github.com/sede-open/core2relperm.git
+   conda create -n relperm numpy matplotlib numba scipy seaborn pandas lmfit emcee
    ```
-2. Configure conda, create new environment and activate it
+2. For rendering in VSCode install the ipykernel package
    ```sh
-   conda update conda
-   conda config --set ssl_verify false
-   conda create --name relperm 
-   conda activate relperm
+   conda install ipykernel
    ```
-3. Install additional Python libraries<BR>
-   pandas 
-   ```sh
-   conda install pandas
-   ```
-   lmfit 
-   ```sh
-   conda install -c conda-forge lmfit
-   ```
-   emcee 
-   ```sh
-   conda install -c conda-forge emcee
-   ```
-   seaborn 
-   ```sh
-   conda install -c anaconda seaborn
-   ```
-   numba 
-   ```sh
-   conda install -c numba numba
-   ```
-
+   
 
 
 <!-- USAGE  -->
