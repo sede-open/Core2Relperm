@@ -74,15 +74,13 @@ Flow simulator code and inverse modelling framework are research code. The 1D fl
 
 3. S. Berg, H. Dijk, E. Unsal, R. Hofmann, B. Zhao, V. Ahuja, Simultaneous Determination of Relative Permeability and Capillary Pressure from an Unsteady-State Core Flooding Experiment ? <A HREF="https://doi.org/10.1016/j.compgeo.2024.106091">Computers and Geotechnics 168, 106091, 2024.</a> 
 
+4. R. Lenormand, K. Lorentzen, J. G. Maas and D. Ruth
+COMPARISON OF FOUR NUMERICAL SIMULATORS FOR SCAL EXPERIMENTS 
+<A HREF="https://www.jgmaas.com/SCA/2016/SCA2016-006.pdf">SCA2016-006</a>
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-
-### Built With
-
-
-* Readme based on <A HREF="https://github.com/othneildrew/Best-README-Template">Best Readme Template</a>
-* Jupyter notebooks generated from .py files with <A HREF="https://jupytext.readthedocs.io/en/latest/using-cli.html">jupytext</a>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -160,9 +158,9 @@ R. Lenormand, K. Lorentzen, J. G. Maas and D. Ruth, COMPARISON OF FOUR NUMERICAL
 
 
 
-### Running Inverse Modelling Examples
+### Inverse Modelling Examples from Paper
 
-We include 2 examples from the paper <b>S. Berg, E. Unsal, H. Dijk, Sensitivity and uncertainty analysis for parameterization of multi phase flow models, <A HREF="https://doi.org/10.1007/s11242-021-01576-4">Transport in Porous Media 140(1), 27-57, 2021.</a></b>
+We include 2 examples from the paper <b>S. Berg, H. Dijk, E. Unsal, R. Hofmann, B. Zhao, V. Ahuja, Simultaneous Determination of Relative Permeability and Capillary Pressure from an Unsteady-State Core Flooding Experiment ? <A HREF="https://doi.org/10.1016/j.compgeo.2024.106091">Computers and Geotechnics 168, 106091, 2024.</a> </b>
 
 * Fig. 09
   ```sh
@@ -177,6 +175,38 @@ The `.py` files are also available as `.ipynb` Jupyter notebooks (generated with
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+### Interpretation of Unsteady-state drainage and imbibition experiments
+We include 4 Jupyter notebooks with synthetic data for drainage and imbibition which are based on the example_Fig17_USS_dpw+dpo+Swz_bumpfloods.ipynb. In the "_to-Excel" notebooks the "simulated" experimental data is written to Excel files, then loaded again and interpreted by inverse modelling. In the "_from-Excel" notebooks only the data from the Excel sheets is loaded and then interpreted by inverse modelling.
+
+* Drainage
+  ```sh
+  USS_synthetic_data_drainage_to-Excel.ipynb
+  ```
+  which generates <b>expdataHISUSSdrainage.xlsx</b>
+  ```sh
+  USS_synthetic_data_drainage_from-Excel.ipynb
+  ```
+* Imbibition
+  ```sh
+  USS_synthetic_data_imbibition_to-Excel.ipynb
+  ```
+  which generates <b>expdataHISUSSimbibition.xlsx</b>
+  ```sh
+  USS_synthetic_data_imbibition_from-Excel.ipynb
+  ```
+
+The Excel files and "_from-Excel" notebooks can be used to interpret user experimental data sets. In principle only the Excel sheets have to be modified with the user experimental data sets. But it is important to maintain the format given in the Excel sheets. 
+
+In these notebooks two alternative methods for assessing the uncertainty regions have been added"
+1. for each varied fit parameter a normal distribution is generated with 1000 samples and then from these samples mean and standard deviation are determined and plotted as uncertainty ranges
+2. Making use of the 
+<A HREF="https://numpy.org/doc/stable/reference/random/generated/numpy.random.Generator.multivariate_normal.html">numpy.random.Generator.multivariate_normal</a> function the covariance matrix from lmfit is direclty used to draw random samples. With a few modifiations i.e. not allowing negative values for fit parameters that should not become negative respective 95% confidence intervals are shows, which is the cleanest way.
+
+Interestingly, the uncertainty ranges from the proper 95% confidence intervals are not dramatically different that the guestimate used in the previous examples.
+
+Also, plotting the correlation matrix has been improved where the varied parameters are automatically determined from the lmfit report. 
 
 
 <!-- ROADMAP -->
@@ -249,10 +279,6 @@ We would like to acknowledge
 2. S. Berg, E. Unsal, H. Dijk, Non-Uniqueness and Uncertainty Quantification of Relative Permeability Measurements by Inverse Modelling, <A HREF="https://www.sciencedirect.com/science/article/pii/S0266352X20305279?dgcid=author">Computers and Geotechnics 132, 103964, 2021.</a>
 
 3. S. Berg, E. Unsal, H. Dijk, Sensitivity and uncertainty analysis for parameterization of multi phase flow models, <A HREF="https://doi.org/10.1007/s11242-021-01576-4">Transport in Porous Media 140(1), 27-57, 2021.</a>
-
-4. R. Lenormand, K. Lorentzen, J. G. Maas and D. Ruth
-COMPARISON OF FOUR NUMERICAL SIMULATORS FOR SCAL EXPERIMENTS 
-<A HREF="https://www.jgmaas.com/SCA/2016/SCA2016-006.pdf">SCA2016-006</a>
 
 
 
