@@ -96,7 +96,7 @@ install required libraries, download the code and run the examples.
 
 The code and examples can be run from most modern Python distributions such as Anaconda. You may want to choose a distribution that has `matplotlib`, `numpy` and other standard packages pre-installed. There are a few extra libraries to install:
 
-* pandas (using internally pandas data frames, but also to import/expert data)
+* pandas (using internally pandas data frames, but also to import/export data)
 * lmfit (the engine for the least squares fits)
 * emcee (Markov chain Monte Carlo sampler, optional)
 * numba (Just In Time compiler)
