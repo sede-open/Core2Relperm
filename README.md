@@ -158,7 +158,7 @@ R. Lenormand, K. Lorentzen, J. G. Maas and D. Ruth, COMPARISON OF FOUR NUMERICAL
 
 
 
-### Inverse Modelling Examples from Paper
+### Inverse Modelling Examples from latest Computers & GeoTechnics Paper
 
 We include 2 examples from the paper <b>S. Berg, H. Dijk, E. Unsal, R. Hofmann, B. Zhao, V. Ahuja, Simultaneous Determination of Relative Permeability and Capillary Pressure from an Unsteady-State Core Flooding Experiment ? <A HREF="https://doi.org/10.1016/j.compgeo.2024.106091">Computers and Geotechnics 168, 106091, 2024.</a> </b>
 
@@ -177,7 +177,7 @@ The `.py` files are also available as `.ipynb` Jupyter notebooks (generated with
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-### Interpretation of Unsteady-state drainage and imbibition experiments
+### Interpretation of <b>Unsteady-state</b> drainage and imbibition experiments
 We include 4 Jupyter notebooks with synthetic data for drainage and imbibition which are based on the example_Fig17_USS_dpw+dpo+Swz_bumpfloods.ipynb. In the "_to-Excel" notebooks the "simulated" experimental data is written to Excel files, then loaded again and interpreted by inverse modelling. In the "_from-Excel" notebooks only the data from the Excel sheets is loaded and then interpreted by inverse modelling.
 
 * Drainage
@@ -207,6 +207,26 @@ In these notebooks two alternative methods for assessing the uncertainty regions
 Interestingly, the uncertainty ranges from the proper 95% confidence intervals are not dramatically different that the guestimate used in the previous examples.
 
 Also, plotting the correlation matrix has been improved where the varied parameters are automatically determined from the lmfit report. 
+
+
+
+
+### Interpretation of <b>Steady-state</b> imbibition experiments
+We include 2 Jupyter notebooks with synthetic data for  imbibition for steady-state flow derived from examples in <A HREF="https://doi.org/10.1007/s11242-021-01576-4">Transport in Porous Media 140(1), 27-57, 2021.</a>
+In the "_to-Excel" notebooks the "simulated" experimental data is written to Excel files, then loaded again and interpreted by inverse modelling. In the "_from-Excel" notebooks only the data from the Excel sheets is loaded and then interpreted by inverse modelling.
+
+
+* Imbibition
+  ```sh
+  SS_synthetic_data_imbibition_to-Excel.ipynb
+  ```
+  which generates <b>expdataHISSSimbibition.xlsx</b>
+  ```sh
+  SS_synthetic_data_imbibition_from-Excel.ipynb
+  ```
+
+The Excel files and "_from-Excel" notebooks can be used to interpret user experimental data sets. In principle only the Excel sheets have to be modified with the user experimental data sets. But it is important to maintain the format given in the Excel sheets. 
+
 
 
 <!-- ROADMAP -->
@@ -263,8 +283,10 @@ Project Link: [https://github.com/sede-open/Core2Relperm](https://github.com/sed
 We would like to acknowledge 
 
 * Sherin Mirza, Aarthi Thyagarajan and Luud Heck from Shell supporting the OpenSource release on GitHub 
+* Vishal Ahuja supporting the project in general and also the initial release on Github.
 * <A HREF="https://www.unileoben.ac.at/universitaet/lehrstuehle/institute/department-petroleum-engineering/lehrstuhl-fuer-reservoir-engineering/">Holger Ott</a>, Omidreza Amrollahinasab (University of Leoben), and <A HREF="http://jgmaas.com/">Jos Maas</a> (PanTerra) for helpful discussions
-* Tibi Sorop and Yingxue Wang for reviewing the paper manuscript 
+* Tibi Sorop and Yingxue Wang for reviewing the paper manuscript
+* Daan de Kort for providing an updated relperm uncertainty quantification making use of the covariance matrix. 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
