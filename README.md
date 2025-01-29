@@ -199,12 +199,12 @@ We include 4 Jupyter notebooks with synthetic data for drainage and imbibition w
 
 The Excel files and "_from-Excel" notebooks can be used to interpret user experimental data sets. In principle only the Excel sheets have to be modified with the user experimental data sets. But it is important to maintain the format given in the Excel sheets. 
 
-In these notebooks two alternative methods for assessing the uncertainty regions have been added"
+In these notebooks two alternative methods for assessing the uncertainty regions have been added
 1. for each varied fit parameter a normal distribution is generated with 1000 samples and then from these samples mean and standard deviation are determined and plotted as uncertainty ranges
 2. Making use of the 
-<A HREF="https://numpy.org/doc/stable/reference/random/generated/numpy.random.Generator.multivariate_normal.html">numpy.random.Generator.multivariate_normal</a> function the covariance matrix from lmfit is direclty used to draw random samples. With a few modifiations i.e. not allowing negative values for fit parameters that should not become negative respective 95% confidence intervals are shows, which is the cleanest way.
+<A HREF="https://numpy.org/doc/stable/reference/random/generated/numpy.random.Generator.multivariate_normal.html">numpy.random.Generator.multivariate_normal</a> function, the covariance matrix from lmfit is direclty used to draw random samples. With a few modifications, i.e. not allowing negative values for fit parameters that should not become negative, 95% confidence intervals are generated, which is the cleanest way.
 
-Interestingly, the uncertainty ranges from the proper 95% confidence intervals are not dramatically different that the guestimate used in the previous examples.
+Interestingly, the uncertainty ranges from the proper 95% confidence intervals are not dramatically different from the guestimate used in the previous examples.
 
 Also, plotting the correlation matrix has been improved where the varied parameters are automatically determined from the lmfit report. 
 
