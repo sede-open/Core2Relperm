@@ -101,6 +101,7 @@ The code and examples can be run from most modern Python distributions such as A
 * emcee (Markov chain Monte Carlo sampler, optional)
 * numba (Just In Time compiler)
 * seaborn (for statistical data visualization)
+* openpyxl (for reading/writing Excel files, which are used to store experimental data)
 
 ### Installation
 
@@ -124,11 +125,13 @@ Quick installation by replicating the environment in Anaconda:
    conda activate relperm
    ```
 
-Alternatively, if you face issues with above mentioned quick installtion, you can create the environment and install the Python packages manually as shown below:
+The environment.yml file does not contain specific versions. We have noticed that on some systems this can create problems. For that reason, we created a second environment file <i>environment-fromhistory.yml</i> which contains specific versions of packages that has been tested on a wider range of systems. To install, use the same command as in (3) but with environment-fromhistory.yml 
+
+Alternatively, if you face issues with above mentioned quick installation, you can create the environment and install the Python packages manually as shown below:
 
 1. Create new environment and install required Python libraries
    ```sh
-   conda create -n relperm numpy matplotlib numba scipy seaborn pandas lmfit emcee
+   conda create -n relperm numpy matplotlib numba scipy seaborn pandas lmfit emcee openpyxl 
    ```
 2. For rendering in VSCode install the ipykernel package
    ```sh

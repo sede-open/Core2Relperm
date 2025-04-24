@@ -10,3 +10,5 @@ dependencies:
   - pandas
   - scipy
   - seaborn
+  - openpyxl
+  - ipykernel
