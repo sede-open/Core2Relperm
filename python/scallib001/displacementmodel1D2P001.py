@@ -360,8 +360,6 @@ def update_step( t, delt, t_end, i_t_stops, t_stops, s_stops, f_stops, follow_st
             pres_conv = s_stops[i_t_stops-1] # NOTE we take from before last row if t beyoud t_stops!
             fw        = f_stops[i_t_stops-1]
             
-            ###print('n tmax i_t_stops t delt',len(t_stops),t_stops[-1],i_t_stops,t,delt)
-            
             if delt<1e-19 and i_t_stops<n-1: raise ValueError('delt too small')
 
 
