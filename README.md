@@ -231,6 +231,20 @@ In the "_to-Excel" notebooks the "simulated" experimental data is written to Exc
 The Excel files and "_from-Excel" notebooks can be used to interpret user experimental data sets. In principle only the Excel sheets have to be modified with the user experimental data sets. But it is important to maintain the format given in the Excel sheets. 
 
 
+### Fitting tabulated relative permeability data with (extended) Corey functions 
+We also include the uncertainty envelope construction and cross correlation matrix from teh prevoius examples in a much more simplistic notebook where tabulated relative permeability data from an Excel file is fitted with extended Corey functions. 
+
+<img src="images/coreyfit.png" alt="Coreyfit">
+
+
+Note that here both wetting and non-wetting phases are fitted simultaneously, which becomes relevant when residual saturations are varied during the fit. 
+
+* Example of a real data set with error bars 
+  ```sh
+  CoreyFit.ipynb
+  ```
+
+
 
 <!-- ROADMAP -->
 ## Roadmap
