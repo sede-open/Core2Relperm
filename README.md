@@ -232,7 +232,7 @@ The Excel files and "_from-Excel" notebooks can be used to interpret user experi
 
 
 ### Fitting tabulated relative permeability data with (extended) Corey functions 
-We also include the uncertainty envelope construction and cross correlation matrix from teh prevoius examples in a much more simplistic notebook where tabulated relative permeability data from an Excel file is fitted with extended Corey functions. 
+We also include the uncertainty envelope construction and cross correlation matrix from the prevoius examples in a much more simplistic notebook where tabulated relative permeability data from an Excel file is fitted with extended Corey functions. 
 
 <img src="images/coreyfit.png" alt="Coreyfit">
 
@@ -244,6 +244,17 @@ Note that here both wetting and non-wetting phases are fitted simultaneously, wh
   CoreyFit.ipynb
   ```
 
+Here we use the extended Corey model 
+
+$k_{r,w} = k_{r,w}(S_{o,r}) \left( \frac{S_w - S_{w,c}}{1-S_{w,c}-S_{o,r}} \right)^{n_w} + \frac{c_w}{1+c_w}\left( \frac{S_w - S_{w,c}}{1-S_{w,c}-S_{o,r}}\right)$
+
+$k_{r,o} = k_{r,o}(S_{w,c}) \left( \frac{1-S_w - S_{o,r}}{1-S_{w,c}-S_{o,r}} \right)^{n_o} + \frac{c_o}{1+c_o}\left( \frac{S_w - S_{w,c}}{1-S_{w,c}-S_{o,r}}\right)$
+
+from
+
+1. S. K. Masalmeh, I. Abu Shiekah, X. D. Jing, Improved Characterization and Modeling of Capillary Transition Zones in Carbonate Reservoirs <A HREF="https://doi.org/10.2118/109094-PA">SPE Res Eval & Eng 10 (02): 191–204. SPE-109094</a> 
+
+to better fit the tail end intervals close to the respective residual saturation
 
 
 <!-- ROADMAP -->
