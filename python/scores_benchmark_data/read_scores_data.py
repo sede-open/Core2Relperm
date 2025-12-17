@@ -125,8 +125,24 @@ def read_scores_data(directory='', excel_file_name=''):
             schedule['FracFlow'] = water_rate / (water_rate + oil_rate) # v/v
             scores.schedule = schedule
 
+        if scomp(l[0], 'time(HOUR)') and scomp(l[1], 'RPM'):
+
+            i, scores_schedule = read_table(df,i,['time', 'RPM'])
+
+
         if scomp(l[0], 'T_end'):
             scores.T_end_HOUR = float(l[1]) # hour
+
+            if "Radius_centre_CM" in scores:
+               # Use T_end and Radius_centre to complete the schedule for centrifuge experiment:
+               schedule = pd.DataFrame()
+               schedule['StartTime'] = scores_schedule.time.values.tolist() + [scores.T_end_HOUR] # hour
+               schedule['RPM'] = scores_schedule.RPM.values.tolist() + [scores_schedule.RPM.values[-1]] # rpm
+               schedule['Acceleration'] = (schedule.RPM.values * 2.0 * np.pi / 60.0)**2 * scores.Radius_centre_CM/100.0  # m/s2
+               schedule['InjRate'] = 0.0 # not relevant
+               schedule['FracFlow'] = 1.0 # 100% water
+               scores.schedule = schedule
+
         if scomp(l[0], 'Start_timestep'):
             scores.Start_timestep_SEC = float(l[1]) # seconds
             scores.Max_timestep_MIN = float(l[4]) # minutes
@@ -139,11 +155,19 @@ def read_scores_data(directory='', excel_file_name=''):
             i, scores.sw_kro = read_table(df,i,['Sw', 'kro']) 
         if scomp(l[0], 'Sw') and scomp(l[1], 'Pc'):
             i, scores.sw_pc = read_table(df,i,['Sw', 'Pc'])  # v/v, bar
+        if scomp(l[0], 'Radius_centre'):
+            scores.Radius_centre_CM = float(l[1]) # cm
+
+        if scomp(l[0], 'Startup_time'):
+            scores.Startup_time_SEC = float(l[1]) # seconds
+            scores.rpm_limit = float(l[4]) # rpm
+
         if scomp(l[1], 'Time'):
-            scores.result_headers = ['INDEX'] + [v.strip() for v in l[1:]]
+
+            scores.result_headers = ['INDEX'] + [v.strip() for v in l[1:] if v is not np.nan]
             i += 1
             l = df.values[i]
-            scores.result_units = ['int'] + [v.strip() for v in l[1:]]
+            scores.result_units = ['int'] + [v.strip() for v in l[1:] if v is not np.nan]
 
             i, scores.result_data = read_table(df,i,scores.result_headers)
 

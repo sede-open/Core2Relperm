@@ -1,4 +1,8 @@
 <a name="readme-top"></a>
+## WARNING This is a development branch of Core2Relperm
+
+We are extending Core2Relperm with interpretation of centrifuge
+experiments. WORK IN PROGRESS.
 
 <!-- TABLE OF CONTENTS -->
 <details>

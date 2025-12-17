@@ -47,354 +47,11 @@ MILLIDARCY = DARCY/1000
 import numpy as np
 import pandas as pd
 import numba
-
-class dictn(dict):
-    def __getattr__(self, name):
-        return self[name]
-
-    def __setattr__(self, name, value):
-        self[name] = value
-
-    def __delattr__(self, name):
-        del self[name]
-
-@numba.njit
-def solve_1D2P_version1(
-           N=21, 
-           cpr_model=None,
-           rlp_model=None,
-           cpr_multiplier=1.0,
-           viscosity_w=1.0,
-           viscosity_n=1.0,
-           gvhw = 0.0,
-           gvhn = 0.0,
-           sw_initial=0,
-    
-           tD_end=0.2, 
-           follow_stops = False,
-           t_stops = [], # user imposed stops
-           s_stops = [], # scale factors
-           f_stops = [], # fractional flows
-
-           max_nr_iter=10, 
-           nr_tolerance=1e-3, 
-           verbose=1, 
-
-           max_dsw = 0.1,
-           max_num_step=1e20, 
-           max_step_size = 0.01,
-           start_step_size = 0.001,
-    
-           refine_grid = False,
-
-           reporting = True,
-
-          ):
-    '''Stripped 1D2P uni-directional flow solver optimized for compilation with numba.
-    
-       - 2 phase incompressible flow with capillary pressure and gravity
-       - uni-directional flow ONLY, i.e., NO counter-current flow
-       - solver uses 1 dummy cell at inlet, will be removed from results
-    '''
-    
-    # Add dummy cell at the inlet
-    N1 = N + 1
-    
-    if refine_grid:
-        
-        delx = 1.0 / (N1-5-1)
-        
-        delxi = np.zeros(N1)
-        delxi[ 0] = 0.1 * delx # The dummy inlet cell
-        delxi[ 1] = 0.1 * delx
-        delxi[ 2] = 0.2 * delx
-        delxi[ 3] = 0.4 * delx
-        delxi[ 4] = 0.8 * delx
-        delxi[-1] = 0.1 * delx
-        delxi[-2] = 0.2 * delx
-        delxi[-3] = 0.4 * delx
-        delxi[-4] = 0.8 * delx
-        delxi[5:-4] = delx
-        
-        dtr = np.zeros( N1 )
-        dtr[1:-1] = 2.0 / (delxi[2:]+delxi[1:-1])
-        dtr[ 0] = 2.0 / delxi[ 1]
-        dtr[-1] = 2.0 / delxi[-1]
-        
-    else:    
-        
-        delx = 1.0/(N1-1) # First cell is inlet, outlet cell not modelled
-        
-        delxi = np.ones( N1 ) * delx
-        
-        dtr = np.ones( N1 )  / delx
-        dtr[ 0] = 2.0/delxi[ 0]
-        dtr[-1] = 2.0/delxi[-1]
-    
-    # Mid cell position
-    xD = np.zeros(N1)
-    xD[0] = -0.5*delxi[0]
-    xD[1] =  0.5*delxi[1]
-    for i in range(2,N1):
-        xD[i] = xD[i-1] + 0.5*(delxi[i-1]+delxi[i])
-    
-    # Set initial water saturation distribution
-    #sw = np.ones(N1,dtype=np.float64)  * sw_initial   trying to fix error in Python 3.11 but that is probalby not the cause
-    sw = np.ones(N1).astype(np.float64)  * sw_initial
-    
-    # Make snapshots at each timestep
-    movie_tD     = []
-    movie_sw     = []
-    movie_dtD    = []
-    movie_pw     = []
-    movie_pn     = []
-    movie_pcw    = []
-    movie_delp   = []
-    movie_flxw   = []
-    movie_nr     = []
-
-    # Initialize simulation time and timestep size   
-    t_stops = np.sort( t_stops )
-    t_stops = np.unique( t_stops )
-    
-    timestep = 0
-    dtD = start_step_size    
-    tD = 0.0
-    
-    for i_t_stops in range(len(t_stops)):
-        if t_stops[i_t_stops]>tD:
-            break
-    
-    dtD, i_t_stops, pres_conv, Fw = update_step( tD, dtD, tD_end, i_t_stops, t_stops, s_stops, f_stops, follow_stops )
-
-    # Pre-allocate arrays for solver
-    jac = np.zeros((N1-1,N1-1))
-    
-    pcw      = np.zeros(N1)
-    pcwd     = np.zeros(N1)
-    dpcwdx   = np.zeros(N1)
-    dpcwdxdu = np.zeros(N1)
-    dpcwdxdd = np.zeros(N1)
-    
-    while tD<tD_end:
-      
-        if timestep>max_num_step: 
-            raise ValueError('FATAL max number of time steps reached - STOP')
-            
-        sw_prv = sw[1:].copy()
-
-        sw_new = sw[1:]  # note: inlet cell is not active, not solved for
-
-        gvhwD = gvhw * pres_conv
-        gvhnD = gvhn * pres_conv
-    
-        gvhD = gvhwD - gvhnD
-
-        for iter in range(max_nr_iter):
-          
-            rlpw, rlpn, rlpwd, rlpnd = rlp_model.calc(sw)
-            
-            pcw, pcwd = cpr_model.calc(sw)
-            
-            mobw, mobn, mobwd, mobnd = rlpw/viscosity_w, rlpn/viscosity_n, rlpwd/viscosity_w, rlpnd/viscosity_n
-
-            mobt  = mobw  + mobn
-            mobtd = mobwd + mobnd
-            
-            fw    = mobw / mobt
-            fwd   = (mobwd * mobt - mobw * mobtd) / mobt**2
-
-            pcw  = pcw  * pres_conv * cpr_multiplier
-            pcwd = pcwd * pres_conv * cpr_multiplier
-            
-            # Derivatives at cell interfaces, convention:
-            # - du  derivative to upstream cell
-            # - dd  derivative to downstream cell
-            
-            dpcwdx  [:-1] = (pcw[+1:]-pcw[:-1]) * dtr[:-1]
-            dpcwdxdu[:-1] =          -pcwd[:-1] * dtr[:-1]
-            dpcwdxdd[:-1] =  pcwd[+1:]          * dtr[:-1]
-            
-            # At outlet interface: no pc outsize core
-            dpcwdx  [-1] = (0-pcw [-1]) * dtr[-1]
-            dpcwdxdu[-1] =   -pcwd[-1]  * dtr[-1]            
-       
-            # flx1: viscous and gravity contribution
-            flx1   =  fw  * (1 - mobn*gvhD)
-            flx1du =  fwd * (1 - mobn*gvhD) + fw * (-mobnd*gvhD)
- 
-            # flx2: capillary contribution
-            flx2   =  fw  * mobn * dpcwdx
-            flx2du =  fwd * mobn * dpcwdx + fw * mobnd * dpcwdx + fw * mobn * dpcwdxdu  
-            flx2dd =                                              fw * mobn * dpcwdxdd 
-            
-            # Impose inflow flux at inlet
-            flx1  [0] = Fw
-            flx1du[0] = 0
-            flx2  [0] = 0
-            flx2du[0] = 0
-            flx2dd[0] = 0
-            
-            # Total flux
-            flxw   = flx1   + flx2
-            flxwdu = flx1du + flx2du
-            flxwdd =          flx2dd
-            
-            if flxw[-1]<0:
-                # No backflow at outlet
-                flxw   [-1] = 0
-                flxwdu [-1] = 0
-                flxwdd [-1] = 0
-                
-            rhs = (sw_new - sw_prv)*delxi[1:]/dtD + flxw[1:] - flxw[:-1]
-
-            nr_residual = np.linalg.norm(rhs*dtD/delxi[1:])
-
-            if verbose>1: 
-                print('iter,residual',iter,nr_residual)
-
-            if nr_residual < nr_tolerance and iter>0: 
-                break
-                            
-            diag00 = delxi[1:]/dtD + flxwdu[1:  ]  - flxwdd[:-1]                                
-            diag10 =                - flxwdu[1:-1] 
-            diag01 =                                + flxwdd[1:-1]
-
-            np.fill_diagonal( jac,       diag00 )
-            np.fill_diagonal( jac[1:  ], diag10 )
-            np.fill_diagonal( jac[:,1:], diag01 )
-
-            d_sw = np.linalg.solve( jac, rhs )
-
-            cutback_factor = np.maximum( np.abs(d_sw).max()/max_dsw, 1.0 )
-            
-            sw_new -= d_sw/cutback_factor
-       
-
-        if nr_residual < nr_tolerance:
-            
-            # Converged, accept timestep
-            
-            tD = tD + dtD
-            timestep += 1
-            
-            if reporting:
-                
-                dpcwdx[0] = (pcw[1]-0.0)*dtr[0]
-                
-                Sw_inlet = calc_inlet_Sw( Fw, dpcwdx[0], viscosity_w, viscosity_n, gvhwD, gvhnD )*1.0
-                
-                mobw[0] = (    Sw_inlet)/viscosity_w
-                mobn[0] = (1.0-Sw_inlet)/viscosity_n
-                mobt[0] = mobw[0] + mobn[0]
-                
-                delp = -(1 + dpcwdx * mobn + gvhnD * mobn + gvhwD * mobw) / dtr / mobt / pres_conv
-
-                pcw /= pres_conv
-                
-                pw = np.zeros( sw.size )
-                pw[2:] = np.cumsum( delp[1:-1] )
-                pw -= pw[-1] - 1.0 + delp[-1] # outer edge at 1 bar
-                
-                pn = pw + pcw
-                
-                # Only report cells inside core
-                movie_tD    .append(tD         )
-                movie_dtD   .append(dtD        )
-                movie_sw    .append(sw  [1:].copy())
-                movie_delp  .append(delp[0:].copy())
-                movie_pw    .append(pw  [1:].copy())
-                movie_pn    .append(pn  [1:].copy())
-                movie_pcw   .append(pcw [1:].copy())
-                movie_flxw  .append(flxw    .copy())
-            
-                movie_nr.append( iter )
-                
-            if verbose>0:
-                print (timestep,'tD, residual',tD,nr_residual,'dtD',dtD,'nr_iter',iter)
-            
-
-            dtD = np.minimum( 2.0*dtD, max_step_size ) #TODO step increment factor
-            
-            if tD<tD_end:
-                dtD, i_t_stops, pres_conv, Fw = \
-                    update_step( tD, dtD, tD_end, i_t_stops, t_stops, s_stops, f_stops, follow_stops )
-    
-        else:
-            
-            # Not converged, reduce timestepsize and try again
-            
-            # Reset saturation to previous value
-            sw[1:] = sw_prv.copy()
-            
-            if verbose>0:
-                print ('tD, residual,backup',tD,nr_residual,dtD)
-
-            dtD = dtD / 2.0 # TODO step cutback factor
-   
-    # Drop dummy inlet cell
-    xD = xD[1:]
-    
-    return (xD, movie_tD, movie_dtD, movie_sw, movie_pw, movie_pn, movie_pcw, movie_delp, movie_flxw, movie_nr)
-
-#TODO simplify and clean up
-
-@numba.njit
-def update_step( t, delt, t_end, i_t_stops, t_stops, s_stops, f_stops, follow_stops ):
-    
-    assert len(t_stops)>1
-    
-    fw = 1
-    
-    n = len(t_stops)
-    
-    if i_t_stops < n:
-        if follow_stops:
-            delt= t_stops[i_t_stops] - t
-            if np.abs(delt) < 1e-6:
-                if i_t_stops<n-1:
-                    i_t_stops += 1
-                    delt = t_stops[i_t_stops] - t
-                else:
-                    delt = t_end - t
-            pres_conv = s_stops[i_t_stops-1] # NOTE we take from before last row if t beyoud t_stops!
-            fw        = f_stops[i_t_stops-1]
-            
-            if delt<1e-19 and i_t_stops<n-1: raise ValueError('delt too small')
-
-
-        else:
-            if t+delt >= t_stops[i_t_stops]:
-                delt = t_stops[i_t_stops] - t
-                pres_conv = s_stops[i_t_stops-1]
-                fw        = f_stops[i_t_stops-1]
-                if len(t_stops)<100: print (t, t_stops[i_t_stops], delt, i_t_stops)
-                if delt<1e-19: raise ValueError('del_t tiny 2')
-                i_t_stops += 1  # FIXME this goes wrong if there is a cutback
-    else:
-        pres_conv = s_stops[-1]
-        
-    return delt, i_t_stops, pres_conv, fw
-
-@numba.njit
-def calc_inlet_Sw( FW, dPcdxD, vscw, vscn, gvhwD, gvhnD ):
-    '''Calculate Sw at inlet set assuming linear relperms at inlet'''
-    qw = vscw * FW
-    qn = vscn * (1-FW)
-    g  = dPcdxD + gvhnD -gvhwD
-    
-    qtg = qw + qn + g
-    
-    q = 0.5*(qtg+np.sign(qtg)*np.sqrt( qtg**2 - 4.0*qw*g ))
-    
-    q = np.float64(q)
-    Sw = 0.0
-    if qtg>0:
-        Sw = qw/q
-    else:
-        Sw = q/g
-
-    return Sw   
+import warnings
+import time
+from .solver_rate_specified import solve_1D2P_rate_specified
+from .solver_centrifuge import solve_1D2P_centrifuge
+from .utils import dictn
 
 class DisplacementModel1D2P(object):
     
@@ -413,15 +70,26 @@ class DisplacementModel1D2P(object):
                  time_end=None,
                  rlp_model=None,
                  cpr_model=None,
+                 flow_direction="imbibition",
+                 centrifuge_rmid=None,
                  rate_schedule=None,
+                 acceleration_schedule=None,
+                 time_rampup=0.0,
+                 ref_acceleration=0.0,
                  movie_schedule=None,
                  NX=50,
-                 verbose=False,
+                 verbose=0,
                  max_step_size=1.0,
+                 min_step_size=1.e-100,
+                 max_dsw=0.1,
                  start_step_size=0.001,
                  refine_grid=True,
                  max_nr_iter=25,
-                 nr_tolerance=1e-10,
+                 max_num_step=1000000,
+                 step_increment_factor=2.0,
+                 step_reduction_factor=2.0,
+                 nr_tolerance=None,
+                 follow_stops=True,
                 ):
         
         self.core_length        = core_length
@@ -440,17 +108,38 @@ class DisplacementModel1D2P(object):
         self.rlp_model          = rlp_model
         self.cpr_model          = cpr_model
         
-        self.time_end           = time_end
-        self.rate_schedule      = rate_schedule
-        self.movie_schedule     = movie_schedule 
-        
         self.NX                 = NX
         self.verbose            = verbose
         self.max_step_size      = max_step_size
+        self.min_step_size      = min_step_size
+        self.max_dsw            = max_dsw
         self.start_step_size    = start_step_size
         self.refine_grid        = refine_grid
         self.max_nr_iter        = max_nr_iter
+        self.max_num_step       = max_num_step
+        self.step_increment_factor = step_increment_factor
+        self.step_reduction_factor = step_reduction_factor
         self.nr_tolerance       = nr_tolerance
+        self.follow_stops       = follow_stops
+
+        self.flow_direction     = flow_direction
+        
+        if acceleration_schedule is not None:
+           self.experiment_type = "centrifuge"
+           self.acceleration_schedule = acceleration_schedule
+           self.centrifuge_rmid = centrifuge_rmid
+           self.time_rampup = time_rampup
+           self.ref_acceleration = ref_acceleration
+           self.nr_tolerance = 1e-5 if nr_tolerance is None else nr_tolerance
+        elif rate_schedule is not None:
+           self.experiment_type = "rate_specified"
+           self.rate_schedule = rate_schedule
+           self.nr_tolerance = 1e-10 if nr_tolerance is None else nr_tolerance
+        else:
+            raise ValueError('FATAL need to specify rate_schedule or acceleration_schedule.' )
+
+        self.time_end           = time_end
+        self.movie_schedule     = movie_schedule 
         
         self.check_input_valid()
         
@@ -466,8 +155,17 @@ class DisplacementModel1D2P(object):
         if len(invalid):
             raise ValueError('FATAL these input parameters have no value: \n'+ '\n'.join(invalid) )
     
-        assert 'StartTime' in self.rate_schedule.columns
-        assert 'InjRate'   in self.rate_schedule.columns
+        if self.experiment_type == "rate_specified":
+            self.validate_rate_schedule()
+        elif self.experiment_type == "centrifuge":
+            self.validate_acceleration_schedule()
+            assert self.centrifuge_rmid > 0.0, "centrifuge_rmid must be specified"
+            assert self.time_rampup >= 0.0, "time_rampup must be non-negative"
+            assert self.ref_acceleration >= 0.0, "ref_acceleration must be non-negative"
+            assert self.density_w > self.density_n, "density_w must be larger than density_n"
+
+        assert self.flow_direction in ["imbibition", "drainage"], \
+             "flow_direction: expect 'imbibition' or 'drainage' but got "+str(self.flow_direction)
         
     def prepare(self):
         
@@ -476,10 +174,23 @@ class DisplacementModel1D2P(object):
         sim_schedule = self.prepare_sim_schedule( self.movie_schedule )
 
         self.sim_schedule = sim_schedule
-        
+
+    def validate_rate_schedule(self):
+        assert 'StartTime' in self.rate_schedule.columns
+        assert 'InjRate'   in self.rate_schedule.columns
+        assert np.all( self.rate_schedule.InjRate.values>0 ), 'Injection rate must be non-zero'
+
+    def validate_acceleration_schedule(self):
+        assert 'StartTime'    in self.acceleration_schedule.columns
+        assert 'Acceleration' in self.acceleration_schedule.columns
+        assert np.all( np.abs(self.acceleration_schedule.Acceleration.values)>0 ), 'Acceleration must be non-zero'
+
     def prepare_sim_schedule( self, time_stops):
 
-        assert np.all( self.rate_schedule.InjRate.values>0 ), 'Injection rate must be non-zero'
+        if self.experiment_type == "rate_specified":
+           schedule = self.rate_schedule
+        else:
+           schedule = self.acceleration_schedule
         
         K   = self.permeability * MILLIDARCY
         L   = self.core_length * CENTIMETER
@@ -490,12 +201,10 @@ class DisplacementModel1D2P(object):
 
         pres_conv = CENTIMETER**3/MINUTE / A * CENTIPOISE * L / K / BAR
 
-        period_time = self.rate_schedule.StartTime.values
-        period_rate = self.rate_schedule.InjRate.values
+        period_time = schedule.StartTime.values
 
         sel = period_time < self.time_end
-        period_time = np.hstack( [period_time[sel], [self.time_end       ]] )
-        period_rate = np.hstack( [period_rate[sel], [period_rate[sel][-1]]] )
+        period_time = np.hstack( [period_time[sel], [self.time_end]] )
 
         time_stops = np.array( time_stops )
 
@@ -512,27 +221,63 @@ class DisplacementModel1D2P(object):
 
         df['Period'] = b
 
-        df['Rate' ] = period_rate[b-1]
+        if self.experiment_type=="rate_specified":
 
-        if 'FracFlow' in self.rate_schedule.columns:
-            n = len(self.rate_schedule)
-            df['FracFlow'] = self.rate_schedule.FracFlow.values[ np.minimum(b-1,n-1)]
-            df['FracFlow'].values[-1] = 1
+           period_rate = schedule.InjRate.values
+           period_rate = np.hstack( [period_rate[sel], [period_rate[sel][-1]]] )
+
+           df['Rate' ] = period_rate[b-1]
+
+           if 'FracFlow' in schedule.columns:
+               n = len(schedule)
+               df['FracFlow'] = schedule.FracFlow.values[ np.minimum(b-1,n-1)]
+               df['FracFlow'].values[-1] = 1
+           else:
+               df['FracFlow'] = 1.0
+
+           dtD = df.dTIME.values * df.Rate.values * tD_conv
+
+           df['P_conv'] = 1.0/(df.Rate.values * pres_conv)
+
         else:
-            df['FracFlow'] = 1.0
 
-        dtD = df.dTIME.values * df.Rate.values * tD_conv
+            # Note that we ignore the sign of Acceleration, use flow_direction to 
+            # specify drainage or imbibition experiment
+            n = len(schedule)
+            df['Acceleration'] = np.abs(schedule.Acceleration.values)[np.minimum(b-1,n-1)]
+
+            dtD = df.dTIME.values * tD_conv
+
+            df['P_conv'] = 1.0/pres_conv
+
         tD  = np.hstack( [[0],dtD[:-1].cumsum()] )
 
         df['tD' ] = tD
         df['dtD'] = dtD
-        
-        df['P_conv'] = 1.0/(df.Rate.values * pres_conv)
 
         return df
-        
+
     def solve(self):
+
+        if self.experiment_type == "rate_specified":
+
+           self.solve_rate_specified()
+
+        elif self.experiment_type == "centrifuge":
+
+           self.solve_centrifuge()
+
+        else:
+
+            raise ValueError("solver not implemented for experiment_type"+str(self.experiment_type))
+
+        return self
+
         
+    def solve_rate_specified(self):
+        
+        cpu_solve = time.time()
+
         sim_schedule = self.sim_schedule
        
         gvh_conv = (gravity_constant * KILOGRAM/METER**3 * CENTIMETER) / BAR
@@ -540,46 +285,135 @@ class DisplacementModel1D2P(object):
         gvhw_bar = self.density_w * self.core_length * gvh_conv
         gvhn_bar = self.density_n * self.core_length * gvh_conv
         
-        solver_result = solve_1D2P_version1( 
+        solver_result = solve_1D2P_rate_specified( 
             
-                N               = self.NX, 
+                N               = int(self.NX), 
                  
-                verbose         = self.verbose,
+                verbose         = int(self.verbose),
                 
-                follow_stops    = True,
+                follow_stops    = bool(self.follow_stops),
                 t_stops         = sim_schedule.tD.values,
                 s_stops         = sim_schedule.P_conv.values,
                 f_stops         = sim_schedule.FracFlow.values,
-                tD_end          = sim_schedule.tD.max(),              
+                tD_end          = float(sim_schedule.tD.max()),              
                 
-                start_step_size = self.start_step_size,
-                max_step_size   = self.max_step_size,
-                nr_tolerance    = self.nr_tolerance,
-                max_nr_iter     = self.max_nr_iter,
-                max_num_step    = 1e9,
+                start_step_size = float(self.start_step_size),
+                max_step_size   = float(self.max_step_size),
+                nr_tolerance    = float(self.nr_tolerance),
+                max_nr_iter     = int(self.max_nr_iter),
+                max_num_step    = int(self.max_num_step),
+                step_increment_factor = float(self.step_increment_factor),
+                step_reduction_factor = float(self.step_reduction_factor),
+                max_dsw         = float(self.max_dsw),
 
-                sw_initial      = self.sw_initial,
+                sw_initial      = float(self.sw_initial),
                 rlp_model       = self.rlp_model,
                 cpr_model       = self.cpr_model,
-                viscosity_w     = self.viscosity_w,
-                viscosity_n     = self.viscosity_n,
-                gvhw            = gvhw_bar * self.gravity_multiplier,
-                gvhn            = gvhn_bar * self.gravity_multiplier,
-                cpr_multiplier  = self.cpr_multiplier,
+                viscosity_w     = float(self.viscosity_w),
+                viscosity_n     = float(self.viscosity_n),
+                gvhw            = float(gvhw_bar * self.gravity_multiplier),
+                gvhn            = float(gvhn_bar * self.gravity_multiplier),
+                cpr_multiplier  = float(self.cpr_multiplier),
             
-                refine_grid     = self.refine_grid,
+                refine_grid     = bool(self.refine_grid),
         )
 
         self.results = self.process_solver_result( solver_result )
+
+        self.results.cpu_solve = time.time() - cpu_solve
+
+        return self
+
+    def solve_centrifuge(self):
+        
+        cpu_solve = time.time()
+
+        is_drainage = True if self.flow_direction == "drainage" else False
+
+        sim_schedule = self.sim_schedule
+       
+        gvh_conv = (gravity_constant * KILOGRAM/METER**3 * CENTIMETER) / BAR
+       
+        gvhw_bar = self.density_w * self.core_length * gvh_conv 
+        gvhn_bar = self.density_n * self.core_length * gvh_conv 
+        
+        acceleration = sim_schedule.Acceleration.values / gravity_constant
+        
+        tD_end = sim_schedule.tD.max()
+
+        time_conv = tD_end / sim_schedule.TIME.max()
+        
+        solver_result = solve_1D2P_centrifuge( 
+            
+                N               = int(self.NX), 
+                 
+                verbose         = int(self.verbose),
+                
+                follow_stops    = bool(self.follow_stops),
+                t_stops         = sim_schedule.tD.values,
+                s_stops         = sim_schedule.P_conv.values,
+                f_stops         = acceleration,
+                tD_end          = float(tD_end),              
+                
+                start_step_size = float(self.start_step_size),
+                max_step_size   = float(self.max_step_size),
+                min_step_size   = float(self.min_step_size),
+                nr_tolerance    = float(self.nr_tolerance),
+                max_nr_iter     = int(self.max_nr_iter),
+                max_num_step    = int(self.max_num_step),
+                step_increment_factor = float(self.step_increment_factor),
+                step_reduction_factor = float(self.step_reduction_factor),
+                max_dsw         = float(self.max_dsw),
+            
+                sw_initial      = float(self.sw_initial),
+                rlp_model       = self.rlp_model,
+                cpr_model       = self.cpr_model,
+                viscosity_w     = float(self.viscosity_w),
+                viscosity_n     = float(self.viscosity_n),
+                gvhw            = float(gvhw_bar * self.gravity_multiplier),
+                gvhn            = float(gvhn_bar * self.gravity_multiplier),
+                cpr_multiplier  = float(self.cpr_multiplier),
+            
+                centrifuge_rmid = float(self.centrifuge_rmid / self.core_length),
+                is_drainage     = int(is_drainage),
+                t_rampup        = float(self.time_rampup*time_conv),
+                ref_acceleration= float(self.ref_acceleration/gravity_constant),
+
+                refine_grid     = bool(self.refine_grid),
+        )
+
+        self.results = self.process_solver_result( solver_result )
+
+        self.results.cpu_solve = time.time() - cpu_solve
 
         return self
 
     def process_solver_result( self, r ):
 
         # Unpack solver result
-        xD, movie_tD, movie_dtD, movie_sw, movie_pw, movie_pn, movie_pcw, movie_delp, movie_flxw, movie_nr = r
+        if self.experiment_type == "centrifuge":
+            xD, delxD, movie_tD, movie_dtD, movie_sw, movie_pw, \
+            movie_pn, movie_pcw, movie_delp, movie_flxw, movie_flxn, \
+            movie_acc, movie_nr, failure_reason = r
+        else:
+            xD, delxD, movie_tD, movie_dtD, movie_sw, movie_pw, \
+            movie_pn, movie_pcw, movie_delp, movie_flxw, movie_nr = r
+            failure_reason = ''
+
+        del r
+
+        if len(failure_reason):
+             warnings.warn(failure_reason, UserWarning)
 
         x = xD * self.core_length
+
+        if self.experiment_type == "centrifuge":
+           if self.flow_direction == "drainage":
+               radius = self.centrifuge_rmid - self.core_length*0.5 + x
+           else:
+               radius = self.centrifuge_rmid - self.core_length*0.5 + (1-xD)*self.core_length
+        else: 
+           radius = x
 
         movie_tD   = np.array ( movie_tD   )
         movie_dtD  = np.array ( movie_dtD  )
@@ -591,6 +425,14 @@ class DisplacementModel1D2P(object):
         movie_flxw = np.vstack( movie_flxw )
         movie_nr   = np.array ( movie_nr   )
 
+        if self.experiment_type == "rate_specified":
+           movie_flxn = 1 - movie_flxw
+        else:
+           movie_flxn = np.vstack( movie_flxn )
+           movie_acc  = np.array ( movie_acc  ) * gravity_constant
+
+        movie_swavg = movie_sw @ delxD
+
         sim_schedule = self.sim_schedule.groupby('Period').first()
 
         EPS = 1e-9 # make sure value is taken on left when exactly on edge
@@ -600,18 +442,35 @@ class DisplacementModel1D2P(object):
         movie_period = np.minimum( movie_period, len(sim_schedule) )
         movie_period = np.maximum( movie_period, 1 )
 
-        movie_inj_rate_t = sim_schedule.Rate.values[movie_period-1]
-
         pore_volume = self.core_length * self.core_area * self.porosity
 
-        movie_dtime = movie_dtD * pore_volume / movie_inj_rate_t
-        movie_time  = np.cumsum( movie_dtime )
+        if self.experiment_type == "centrifuge":
+            # Centrifuge: dynamic injection rates
+        
+            movie_inj_rate_t = movie_flxw[:,0] + movie_flxn[:,0]
+            
+            movie_dtime = movie_dtD * pore_volume
+            movie_time  = np.cumsum( movie_dtime )
 
-        movie_inj_rate_w = (  movie_flxw[:, 0]) * movie_inj_rate_t
-        movie_inj_rate_n = (1-movie_flxw[:, 0]) * movie_inj_rate_t
+            movie_inj_rate_w = movie_flxw[:, 0]
+            movie_inj_rate_n = movie_flxn[:, 0]
 
-        movie_prd_rate_w = (  movie_flxw[:,-1]) * movie_inj_rate_t
-        movie_prd_rate_n = (1-movie_flxw[:,-1]) * movie_inj_rate_t
+            movie_prd_rate_w = movie_flxw[:,-1]
+            movie_prd_rate_n = movie_flxn[:,-1]
+
+        else:
+            # SS or USS, fixed injection rates
+            
+            movie_inj_rate_t = sim_schedule.Rate.values[movie_period-1]
+
+            movie_dtime = movie_dtD * pore_volume / movie_inj_rate_t
+            movie_time  = np.cumsum( movie_dtime )
+
+            movie_inj_rate_w = (  movie_flxw[:, 0]) * movie_inj_rate_t
+            movie_inj_rate_n = (1-movie_flxw[:, 0]) * movie_inj_rate_t
+
+            movie_prd_rate_w = (  movie_flxw[:,-1]) * movie_inj_rate_t
+            movie_prd_rate_n = (1-movie_flxw[:,-1]) * movie_inj_rate_t
 
         movie_inj_volume_w = np.cumsum(movie_inj_rate_w*movie_dtime)
         movie_inj_volume_n = np.cumsum(movie_inj_rate_n*movie_dtime)
@@ -648,8 +507,13 @@ class DisplacementModel1D2P(object):
         tss_table['delta_P'            ] = tss_table.P_inj.values - tss_table.P_prod.values     
         tss_table['delta_P_w'          ] = movie_pw[:,0] - movie_pw[:,-1]
         tss_table['delta_P_o'          ] = movie_pn[:,0] - movie_pn[:,-1]
+        tss_table['Sw_avg'             ] = movie_swavg
+
+        if self.experiment_type == "centrifuge":
+            tss_table['Acceleration'] = movie_acc
 
         return dictn(locals())
+
 
     def get_tss_table_info( self ):
         return get_tss_table_info()       
@@ -681,6 +545,8 @@ tss_table_explanation = dict(
     delta_P     = 'pressure drop between inlet and outlet face [bar]',
     delta_P_w   = 'water phase pressure drop [bar]',
     delta_P_o   = 'oil phase pressure drop [bar]',
+    Sw_avg      = 'Average water saturation in plug [v/v]',
+    Acceleration= 'Acceleration [m/s2] for centrifuge experiment',
 )
 
 def get_tss_table_info():
