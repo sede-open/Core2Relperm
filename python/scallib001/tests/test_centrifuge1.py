@@ -2977,7 +2977,7 @@ def test_imbibition6():
 
    assert np.abs(delta_sw).mean() < SW_TOLERANCE
     
-# test_centrifuge_drainage2b.py
+# test_centrifuge_drainage3.py
 
 import numpy as np
 import pandas as pd
@@ -3266,7 +3266,7 @@ def test_drainage_tss_table(RTOL=0.001):
 
     # check that simulation results are identical to reference simulation
 
-    # date of creation 12/07/2025, 14:45:09
+    # date of creation 12/20/2025, 18:43:43
     
     tss_table = results.tss_table
     
@@ -3275,29 +3275,23 @@ def test_drainage_tss_table(RTOL=0.001):
     assert np.allclose( tss_table.PVinj          .values[-1],   3.761442493475E+01, rtol=RTOL)
     assert np.allclose( tss_table.tD             .values[-1],   3.761442493475E+01, rtol=RTOL)
     assert np.allclose( tss_table.dtD            .values[-1],   3.765178186567E-01, rtol=RTOL)
-    assert np.allclose( tss_table.InjRate        .values[-1],   8.486675156746E-04, rtol=RTOL)
-    assert np.allclose( tss_table.PVInjRate      .values[-1],   1.773452253495E-05, rtol=RTOL)
+    assert np.allclose( tss_table.InjRate        .values[-1],   8.486675214954E-04, rtol=RTOL)
+    assert np.allclose( tss_table.PVInjRate      .values[-1],   1.773452265658E-05, rtol=RTOL)
     assert np.allclose( tss_table.FracFlowInj    .values[-1],   0.000000000000E+00, rtol=RTOL)
     assert np.allclose( tss_table.FracFlowPrd    .values[-1],   8.486674866550E-04, rtol=RTOL)
     assert np.allclose( tss_table.WATERInj       .values[-1],   0.000000000000E+00, rtol=RTOL)
-    assert np.allclose( tss_table.OILInj         .values[-1],   8.486675156746E-04, rtol=RTOL)
+    assert np.allclose( tss_table.OILInj         .values[-1],   8.486675214954E-04, rtol=RTOL)
     assert np.allclose( tss_table.WATERProd      .values[-1],   8.486674866550E-04, rtol=RTOL)
-    assert np.allclose( tss_table.OILProd        .values[-1],   7.680339620921E-12, rtol=RTOL)
+    assert np.allclose( tss_table.OILProd        .values[-1],   7.680195756524E-12, rtol=RTOL)
     assert np.allclose( tss_table.CumWATERInj    .values[-1],   0.000000000000E+00, rtol=RTOL)
-    assert np.allclose( tss_table.CumOILInj      .values[-1],   3.069066673595E+01, rtol=RTOL)
-    assert np.allclose( tss_table.CumWATER       .values[-1],   3.069066692336E+01, rtol=RTOL)
-    assert np.allclose( tss_table.CumOIL         .values[-1],   4.901862080055E-07, rtol=RTOL)
-   #assert np.allclose( tss_table.P_inj          .values[-1],   1.197937665134E+04, rtol=RTOL)
-   #assert np.allclose( tss_table.P_inj_wat      .values[-1],  -6.185131217409E+00, rtol=RTOL)
-   #assert np.allclose( tss_table.P_inj_oil      .values[-1],   1.160919801942E-01, rtol=RTOL)
-   #assert np.allclose( tss_table.P_prod         .values[-1],   6.395444304398E+01, rtol=RTOL)
-   #assert np.allclose( tss_table.P_prod_wat     .values[-1],   6.395451791692E+01, rtol=RTOL)
-   #assert np.allclose( tss_table.P_prod_oil     .values[-1],   6.431027177306E+01, rtol=RTOL)
-    assert np.allclose( tss_table.delta_P        .values[-1],   1.191542220830E+04, rtol=RTOL)
+    assert np.allclose( tss_table.CumOILInj      .values[-1],   3.069066665787E+01, rtol=RTOL)
+    assert np.allclose( tss_table.CumWATER       .values[-1],   3.069066692989E+01, rtol=RTOL)
+    assert np.allclose( tss_table.CumOIL         .values[-1],   4.901825188986E-07, rtol=RTOL)
+    assert np.allclose( tss_table.delta_P        .values[-1],  -6.391555810160E+01, rtol=RTOL)
     assert np.allclose( tss_table.delta_P_w      .values[-1],  -7.013964913432E+01, rtol=RTOL)
     assert np.allclose( tss_table.delta_P_o      .values[-1],  -6.419417979287E+01, rtol=RTOL)
     assert np.allclose( tss_table.Sw_avg         .values[-1],   3.586501181134E-01, rtol=RTOL)
     assert np.allclose( tss_table.Acceleration   .values[-1],   7.989444762700E+04, rtol=RTOL)
-    assert (1156 < results.movie_nr.sum()) & (results.movie_nr.sum() < 1277)
+    assert (1162 < results.movie_nr.sum()) & (results.movie_nr.sum() < 1285)
 
 

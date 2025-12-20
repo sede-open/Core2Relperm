@@ -420,8 +420,6 @@ def solve_1D2P_centrifuge(
                 pw1  = pw/pres_conv
                 pcw /= pres_conv
                
-                delp = potw / pres_conv ## BUGGING
-                
                 pn1 = pw1 + pcw
                 
                 flxw = flx[:,0] 

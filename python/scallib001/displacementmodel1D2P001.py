@@ -370,8 +370,8 @@ class DisplacementModel1D2P(object):
                 cpr_model       = self.cpr_model,
                 viscosity_w     = float(self.viscosity_w),
                 viscosity_n     = float(self.viscosity_n),
-                gvhw            = float(gvhw_bar * self.gravity_multiplier),
-                gvhn            = float(gvhn_bar * self.gravity_multiplier),
+                gvhw            = float(gvhw_bar),
+                gvhn            = float(gvhn_bar),
                 cpr_multiplier  = float(self.cpr_multiplier),
             
                 centrifuge_rmid = float(self.centrifuge_rmid / self.core_length),
