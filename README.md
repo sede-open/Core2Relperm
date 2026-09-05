@@ -1,8 +1,4 @@
 <a name="readme-top"></a>
-## WARNING This is a development branch of Core2Relperm
-
-We are extending Core2Relperm with interpretation of centrifuge
-experiments. WORK IN PROGRESS.
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -149,13 +145,14 @@ Alternatively, if you face issues with above mentioned quick installation, you c
 
 ### Solver Benchmarks
 
-We included 4 SCAL benchmarks from <A HREF="https://www.jgmaas.com">https://www.jgmaas.com</A> 
+We included 5 SCAL benchmarks from <A HREF="https://www.jgmaas.com">https://www.jgmaas.com</A> 
 
 ```
   benchmark_scores_Case1.ipynb
   benchmark_scores_Case2.ipynb
   benchmark_scores_Case3.ipynb
   benchmark_scores_Case4.ipynb
+  benchmark_scores_Case5.ipynb
 ```
 
 
@@ -268,6 +265,7 @@ to better fit the tail end intervals close to the respective residual saturation
 - [ ] Add more examples from previous papers
     - [ ] steady-state experiments
     - [ ] matching real data
+- [ ] Include centrifuge data in the match
 
 <!-- 
 See the [open issues](https://github.com/othneildrew/Best-README-Template/issues) for a full list of proposed features (and known issues).
