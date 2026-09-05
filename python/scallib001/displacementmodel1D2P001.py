@@ -231,7 +231,7 @@ class DisplacementModel1D2P(object):
            if 'FracFlow' in schedule.columns:
                n = len(schedule)
                df['FracFlow'] = schedule.FracFlow.values[ np.minimum(b-1,n-1)]
-               df['FracFlow'].values[-1] = 1
+               df.loc[ df.index[-1], 'FracFlow'] = 1.0
            else:
                df['FracFlow'] = 1.0
 
