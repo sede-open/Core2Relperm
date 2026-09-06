@@ -60,13 +60,14 @@ This project has been created to provide a standalone Python tool for the interp
 It contains 
 <ul>
   <li>a 1D numerical flow solver (Darcy fractional flow solver with capillarity in 1D) and</li>
+  <li>for steady-state, unsteady-state and centrifuge (new)
   <li>an inverse modelling framework which is utilizing the optimization package called <A HREF="https://lmfit.github.io/lmfit-py/">lmfit</a> from Python</li>
 </ul>
 The inverse modelling framework is in its default version a least-squares fit using the Levenberg-Marquardt algorithm. It essentially performs a least-squares fit of the numerical solution of a set of partial differential equations (which are numerically solved by the flow solver) to numerical data. The Jacobian is automatically computed numerically in the background by the lmfit package. 
 The flow solver is accelerated with the <A HREF="https://numba.pydata.org/">numba</a> just-in-time compiler which makes the flow solver code run in just about 50 ms. 
 For a few tens of iterations required for a typical inverse modelling with least-squares fit, the code runs just in a few seconds. One can also change an option in the lmfit package (only a single line) to using the <A HREF="https://emcee.readthedocs.io/en/stable/">emcee</a> <A HREF="https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo">Markov chain Monte Carlo (MCMC)</a> package. About 10,000-20,000 iterations will run in a few hours in single-threaded mode. The advantage of using the MCMC approach is that one can address problems non-uniqueness and <A HREF="https://emcee.readthedocs.io/en/stable/tutorials/line/">non-Gaussian errors</a>. 
 
-Flow simulator code and inverse modelling framework are research code. The 1D flow code has been validated against benchmarks developed by <A HREF="http://jgmaas.com/">Jos Maas</a> and respective benchmark examples are included as examples. The inverse modelling framework has been validated in a series of publications
+Flow simulator code and inverse modelling framework are research code. The 1D flow code has been validated against benchmarks developed by <A HREF="http://jgmaas.com/">Jos Maas</a> and respective benchmark examples are included as examples (steady-state, unsteady-state and centrifuge). The inverse modelling framework has been validated in a series of publications
 
 1. S. Berg, E. Unsal, H. Dijk, Non-Uniqueness and Uncertainty Quantification of Relative Permeability Measurements by Inverse Modelling, <A HREF="https://www.sciencedirect.com/science/article/pii/S0266352X20305279?dgcid=author">Computers and Geotechnics 132, 103964, 2021.</a>
 
@@ -148,11 +149,11 @@ Alternatively, if you face issues with above mentioned quick installation, you c
 We included 5 SCAL benchmarks from <A HREF="https://www.jgmaas.com">https://www.jgmaas.com</A> 
 
 ```
-  benchmark_scores_Case1.ipynb
-  benchmark_scores_Case2.ipynb
-  benchmark_scores_Case3.ipynb
-  benchmark_scores_Case4.ipynb
-  benchmark_scores_Case5.ipynb
+  benchmark_scores_Case1.ipynb (steady-state, smooth pc)
+  benchmark_scores_Case2.ipynb (steady-state, sharp pc)
+  benchmark_scores_Case3.ipynb (unsteady-state, smooth pc)
+  benchmark_scores_Case4.ipynb (unsteady-state, no pc)
+  benchmark_scores_Case5.ipynb (centrifuge primary drainage)
 ```
 
 
@@ -258,6 +259,20 @@ from
 to better fit the tail end intervals close to the respective residual saturation
 
 
+
+### Interpretation of <b>Centrifuge</b> experiments
+
+A new solver for simulating centrifuge experiments has been developed and integrated into the package. The displacementmodel1D2P001.py calls either the solver for steady-state or unsteady-state experiments solver_rate_specified.py or for centrifuge experiments the new solver solver_centrifuge.py depending on the keys used in the DisplacementModel1D2P. 
+
+So far we have only included test cases 
+
+  ```sh
+  intro_centrifuge.ipynb
+  benchmark_scores_Case5.ipynb
+  ```
+ 
+ which are demonstrations/examples of forward models and benchmark for validation, but no inverse model, which is to follow soon.
+
 <!-- ROADMAP -->
 ## Roadmap
 
@@ -265,7 +280,12 @@ to better fit the tail end intervals close to the respective residual saturation
 - [ ] Add more examples from previous papers
     - [ ] steady-state experiments
     - [ ] matching real data
+    - [ ] add SS and USS examples with synthetic data
 - [ ] Include centrifuge data in the match
+    - [ ] add a centrifuge solver
+    - [ ] make an inverse match for the centrifuge
+    - [ ] make an integrated match with SS, USS and centrifuge together
+
 
 <!-- 
 See the [open issues](https://github.com/othneildrew/Best-README-Template/issues) for a full list of proposed features (and known issues).
@@ -312,11 +332,13 @@ Project Link: [https://github.com/sede-open/Core2Relperm](https://github.com/sed
 
 We would like to acknowledge 
 
+* Harm Dijk for developing the Python self-contained flow solver for steady-state and unsteady-state and developing a large fraction of the code.
 * Sherin Mirza, Aarthi Thyagarajan and Luud Heck from Shell supporting the OpenSource release on GitHub 
 * Vishal Ahuja supporting the project in general and also the initial release on Github.
 * <A HREF="https://www.unileoben.ac.at/universitaet/lehrstuehle/institute/department-petroleum-engineering/lehrstuhl-fuer-reservoir-engineering/">Holger Ott</a>, Omidreza Amrollahinasab (University of Leoben), and <A HREF="http://jgmaas.com/">Jos Maas</a> (PanTerra) for helpful discussions
 * Tibi Sorop and Yingxue Wang for reviewing the paper manuscript
 * Daan de Kort for providing an updated relperm uncertainty quantification making use of the covariance matrix. 
+* Harm Dijk developing the centrifuge solver
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
