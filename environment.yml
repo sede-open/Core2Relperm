@@ -11,4 +11,5 @@ dependencies:
   - scipy
   - seaborn
   - openpyxl
+  - xlsxwriter
   - ipykernel
